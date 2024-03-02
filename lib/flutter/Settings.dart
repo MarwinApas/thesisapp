@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
@@ -172,28 +173,61 @@ class _SettingsState extends State<Settings> {
                   color: Colors.grey,
                 ),
               ),
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 35,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey, width: 2),
-                    )),
-                child: Row(
-                  children: [
-                    Text(
-                      "LOGOUT",
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
+                        content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Perform logout logic here
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
+                                ),
+                              );
+                            },
+                            child: Text("Confirm"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                child:               Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 35,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey, width: 2),
+                      )),
+                  child: Row(
+                    children: [
+                      Text(
+                        "LOGOUT",
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Spacer(),
-                    Icon(Icons.arrow_right),
-                  ],
+                      Spacer(),
+                      Icon(Icons.arrow_right),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 185),
