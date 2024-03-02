@@ -3,6 +3,7 @@ import 'package:thesis_app/InsideTrackerPage.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
+import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/main.dart';
 
 class Tracker extends StatefulWidget {
@@ -44,7 +45,6 @@ class _TrackerState extends State<Tracker> {
       body: Stack(
         children: [
           // Your other widgets go here
-
           // Container at the bottom
           Positioned(
             bottom: 0,
@@ -162,40 +162,18 @@ class _TrackerState extends State<Tracker> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text(
-                              "Logout",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            content: Text(
-                              "Are you sure you want to logout?",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text("Cancel"),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  // Perform logout logic here
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => LoginPage(),
-                                    ),
-                                  );
-                                },
-                                child: Text("Confirm"),
-                              ),
-                            ],
-                          );
-                        },
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => Settings(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 100),
+                        ),
                       );
                     },
                     child: Container(
@@ -210,14 +188,15 @@ class _TrackerState extends State<Tracker> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.logout,
+                            Icons.settings,
                             size: 30,
                             color: Colors.black,
                           ),
                           SizedBox(height: 5),
                           Text(
-                            'LOGOUT',
-                            style: TextStyle(color: Colors.black),
+                            'SETTINGS',
+                            style: TextStyle(color: Colors.black,
+                            fontSize: 12.5),
                           ),
                         ],
                       ),
@@ -227,7 +206,6 @@ class _TrackerState extends State<Tracker> {
               ),
             ),
           ),
-
           Positioned(
             bottom: 20,
             left: 156,

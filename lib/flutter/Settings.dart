@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thesis_app/WelcomePage.dart';
+import 'package:thesis_app/flutter/Alerts.dart';
+import 'package:thesis_app/flutter/Tracker.dart';
 
 class Settings extends StatefulWidget {
   const Settings({Key? key});
@@ -18,13 +20,13 @@ class _SettingsState extends State<Settings> {
         iconTheme: IconThemeData(color: Colors.white),
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back, // You can replace this with your custom back icon
+            Icons.arrow_back,
             color: Colors.white,
           ),
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context)=>WelcomePage()),
+              MaterialPageRoute(builder: (context) => WelcomePage()),
             );
           },
         ),
@@ -37,83 +39,373 @@ class _SettingsState extends State<Settings> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: 250,
-              decoration: BoxDecoration(
-                color: Color(0xE0FFFFFF), //Color(0xE0FFFFFF)
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 30),
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 4,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 250,
+                decoration: BoxDecoration(
+                  color: Color(0xE0FFFFFF), //Color(0xE0FFFFFF)
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 30),
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 4,
+                          ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.person_rounded,
+                                size: 130,
+                                color: Colors.black,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Column(
+                      SizedBox(height: 20),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Text(
+                              "HELLO, MARWIN JAKE APAS!",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 5),
                             Icon(
-                              Icons.person_rounded,
-                              size: 130,
-                              color: Colors.black,
+                              Icons.edit,
                             ),
                           ],
                         ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 25,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                ),
+                child: Text(
+                  "ACCOUNT",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    color: Color(0x86262626),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 35,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      top: BorderSide(color: Colors.grey, width: 2),
+                      bottom: BorderSide(color: Colors.grey, width: 2),
+                    )),
+                child: Row(
+                  children: [
+                    Text(
+                      "CHANGE NAME",
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // Align the Row to the center
-                        children: [
-                          Text(
-                            "HELLO, MARWIN JAKE APAS!",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 5), // Add some space between text and icon
-                          Icon(
-                            Icons.edit,
-                          ),
-                        ],
-                      ),
-                    )
+                    Spacer(),
+                    Icon(Icons.arrow_right),
                   ],
                 ),
               ),
-            ),
-            SizedBox( height: 10),
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: 25,
-              decoration: BoxDecoration(
-                color: Colors.grey,
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 35,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey, width: 2),
+                    )),
+                child: Row(
+                  children: [
+                    Text(
+                      "CHANGE PASSWORD",
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    Icon(Icons.arrow_right),
+                  ],
+                ),
               ),
-              child: Text("ACCOUNT",
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                color: Color(0x86262626),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),),
-            )
-          ],
-        ),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                ),
+              ),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 35,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey, width: 2),
+                    )),
+                child: Row(
+                  children: [
+                    Text(
+                      "LOGOUT",
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    Icon(Icons.arrow_right),
+                  ],
+                ),
+              ),
+              SizedBox(height: 185),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 90,  // Adjust the height as needed
+              color: Color(0xff02022d),  // Adjust the color as needed
+
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WelcomePage(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Color(0xE0FFFFFF),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.home,
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'HOME',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => Tracker(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 100),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Color(0xE0FFFFFF),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.radar_sharp,
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'TRACKER',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 50),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => Alerts(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 100),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Color(0xE0FFFFFF),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notification_important,
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'ALERTS',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(10.0),
+                      color: Colors.grey,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.settings,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'SETTINGS',
+                          style: TextStyle(color: Colors.white,
+                              fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 20,
+            left: 156,
+            child: Container(
+              width: 80,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black,
+                border: Border.all(
+                  color: Colors.black,
+                  width: 3,
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  width: 70,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+
       ),
+
     );
   }
 }
