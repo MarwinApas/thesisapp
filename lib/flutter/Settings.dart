@@ -126,20 +126,34 @@ class _SettingsState extends State<Settings> {
                       top: BorderSide(color: Colors.grey, width: 2),
                       bottom: BorderSide(color: Colors.grey, width: 2),
                     )),
-                child: Row(
-                  children: [
-                    Text(
-                      "CHANGE NAME",
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                child: Flexible(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Add your functionality here
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      elevation: 0, // No shadow
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(0),
                       ),
                     ),
-                    Spacer(),
-                    Icon(Icons.arrow_right),
-                  ],
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          "CHANGE NAME",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Spacer(),
+                        Icon(Icons.arrow_right),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               Container(
@@ -150,20 +164,32 @@ class _SettingsState extends State<Settings> {
                     border: Border(
                       bottom: BorderSide(color: Colors.grey, width: 2),
                     )),
-                child: Row(
-                  children: [
-                    Text(
-                      "CHANGE PASSWORD",
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Add your functionality here
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    elevation: 0, // No shadow
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(0),
                     ),
-                    Spacer(),
-                    Icon(Icons.arrow_right),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "CHANGE PASSWORD",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Spacer(),
+                      Icon(Icons.arrow_right),
+                    ],
+                  ),
                 ),
               ),
               Container(
@@ -205,7 +231,7 @@ class _SettingsState extends State<Settings> {
                     },
                   );
                 },
-                child:               Container(
+                child:Container(
                   width: MediaQuery.of(context).size.width,
                   height: 35,
                   decoration: BoxDecoration(
@@ -217,15 +243,15 @@ class _SettingsState extends State<Settings> {
                     children: [
                       Text(
                         "LOGOUT",
-                        textAlign: TextAlign.left,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Spacer(),
-                      Icon(Icons.arrow_right),
+                      SizedBox(width: MediaQuery.of(context).size.width *.7,),
+                      Icon(Icons.logout),
                     ],
                   ),
                 ),
