@@ -62,7 +62,7 @@ class _SettingsState extends State<Settings> {
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: Colors.black,
-                            width: 4
+                            width: 4,
                           ),
                         ),
                         child: Center(
