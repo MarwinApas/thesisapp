@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
