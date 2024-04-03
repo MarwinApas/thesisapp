@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:thesis_app/JsonModels/users.dart';
+import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/forgotPasswordPage.dart';
 import 'package:thesis_app/main.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -10,14 +13,68 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final username = TextEditingController();
-  final password =  TextEditingController();
 
-  //variable to show and hide pass
+  final userName = TextEditingController();
+  final userPassword = TextEditingController();
+  final db = DatabaseHelper();
+
+  bool isLoginTrue = false;
+  Future<void> login() async {
+    // Check if the username exists
+    bool usernameExists = await db.checkUsernameExists(userName.text);
+
+    if (!usernameExists) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text("Username does not exist. please try again."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      var res = await db.authenticate(Users(userName:userName.text,userPassword:userPassword.text));
+      if (res == true) {
+        if (!mounted) return;
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomePage()));
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Error"),
+              content: Text("Incorrect username or password. Please try again."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+  }
+
+
+
+
   bool isVisible = true;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { // Implement build method
     return Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       body: Stack(
@@ -30,11 +87,10 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.all(20.0),
                 child: TextButton(
                   onPressed: () {
-                    Navigator.of(context)
-                        .push(
-                        MaterialPageRoute(
-                            builder: (context) => Home()
-                        )
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => Home(),
+                      ),
                     );
                   },
                   child: FittedBox(
@@ -62,7 +118,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-
           Center(
             child: Padding(
               padding: const EdgeInsets.all(30),
@@ -76,7 +131,6 @@ class _LoginPageState extends State<LoginPage> {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Form(
-                    key: _formKey,
                     autovalidateMode: AutovalidateMode.disabled,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -86,6 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                           width: 300, // Adjust the width as needed
                           alignment: Alignment.topCenter, // Adjust the alignment
                           child: TextFormField(
+                            controller: userName,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.person),
                               hintText: "Enter Username",
@@ -108,6 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                         Container(
                           width: 300, // Adjust the width as needed
                           child: TextFormField(
+                            controller: userPassword,
                             obscureText: isVisible,
                             decoration: InputDecoration(
                               prefixIcon: Icon(Icons.lock),
@@ -137,16 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         SizedBox(height: 10),
                         TextButton(
-                          onPressed: () {
-                            if (_formKey.currentState?.validate() ?? false) {
-                              Navigator.of(context)
-                                  .push(
-                                  MaterialPageRoute(
-                                      builder: (context) => WelcomePage()
-                                  )
-                              );
-                            }
-                          },
+                          onPressed: login,
                           child: Text(
                             "Login",
                             style: TextStyle(

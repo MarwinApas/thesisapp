@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:thesis_app/SQLite/database_helper.dart';
+import 'package:thesis_app/changePasswordPage.dart';
+import 'package:thesis_app/main.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({Key? key}) : super(key: key);
@@ -8,11 +11,70 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-
   String? selectedQuestion;
-  TextEditingController usernameController = TextEditingController();
-  TextEditingController answerController = TextEditingController();
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final userName = TextEditingController();
+  final answerController = TextEditingController();
+  int attemptCount = 0;
+
+  void verifyUser() async {
+    String username = userName.text;
+    String question = selectedQuestion ?? "";
+    String answer = answerController.text;
+
+    bool isValid = await DatabaseHelper().verifyUserDetails(username, question, answer);
+
+    if (isValid) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => changePasswordPage()),
+      );
+    } else {
+      setState(() {
+        attemptCount++;
+      });
+      if (attemptCount >= 3) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Attempt Limit Reached"),
+              content: Text("Please try again later."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => Home(),
+                      ),
+                    );
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Incorrect Verification"),
+              content: Text("Please try again."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +132,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Form(
-                      key: _formKey,
+                      //key: _formKey,
                       autovalidateMode: AutovalidateMode.disabled,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -80,7 +142,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: usernameController,
+                              controller: userName,
                               decoration: InputDecoration(
                                 hintText: "Enter Username",
                                 fillColor: Colors.white,
@@ -154,11 +216,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ), //pass
                           SizedBox(height: 30),
                           TextButton(
-                            onPressed: () {
-                              if (_formKey.currentState?.validate() ?? false) {
-                                // All fields are valid, handle verification action
-                              }
-                            },
+                            onPressed: verifyUser,
                             child: Text(
                               "Verify",
                               style: TextStyle(

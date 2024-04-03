@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:thesis_app/JsonModels/users.dart';
+import 'package:thesis_app/SQLite/database_helper.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -9,15 +12,54 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   String? selectedQuestion;
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+final db = DatabaseHelper();
+final firstName = TextEditingController();
+final lastName = TextEditingController();
+final userName = TextEditingController();
+final userPassword = TextEditingController();
+final confirmUserPassword = TextEditingController();
+final userVerificationQuestion = TextEditingController();
+final userVerificationAnswer = TextEditingController();
 
-  final firstname = TextEditingController();
-  final lastname = TextEditingController();
-  final username = TextEditingController();
-  final newPassword = TextEditingController();
-  final confirmPassword = TextEditingController();
-  final verificationAnswer = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+Future<void> registerUser() async {
+  // Check if the username already exists in the database
+  bool usernameExists = await db.checkUsernameExists(userName.text);
+
+  if (usernameExists) {
+    // Username already exists, display an error message
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text("Username already exists. Please type a different username."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  } else {
+    // Username is unique, proceed with user registration
+    final newUser = Users(
+      firstName: firstName.text,
+      lastName: lastName.text,
+      userName: userName.text,
+      userPassword: userPassword.text,
+      userVerificationQuestion: userVerificationQuestion.text,
+      userVerificationAnswer: userVerificationAnswer.text,
+    );
+    await db.createUser(newUser);
+    Navigator.pop(context); // Navigate back to the previous screen after registration
+  }
+}
+
+  //final formKey = GlobalKey<FormState>();
   bool newPasswordIsVisible = true, confirmPasswordIsVisible = true;
 
   @override
@@ -43,7 +85,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Form(
-                      key: _formKey,
                       autovalidateMode: AutovalidateMode.disabled,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -53,6 +94,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
+                              controller: firstName,
                               decoration: InputDecoration(
                                 hintText: "First Name",
                                 fillColor: Colors.white,
@@ -75,6 +117,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
+                              controller: lastName,
                               decoration: InputDecoration(
                                 hintText: "Last Name",
                                 fillColor: Colors.white,
@@ -91,6 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
+                              controller: userName,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.person),
                                 hintText: "New Username",
@@ -114,6 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
+                              controller: userPassword,
                               obscureText: newPasswordIsVisible,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock),
@@ -146,6 +191,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
+                              controller: confirmUserPassword,
                               obscureText: confirmPasswordIsVisible,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock),
@@ -180,17 +226,25 @@ class _RegisterPageState extends State<RegisterPage> {
                             child: DropdownButton<String>(
                               hint: Text("Verification Question"),
                               value: selectedQuestion,
-                              onChanged: (String? newValue) {
+                              onChanged: (String? newValue) async {
                                 setState(() {
                                   selectedQuestion = newValue;
                                 });
+                                if (newValue != null) {
+                                  // Store the selected question in your userVerificationQuestion TextEditingController
+                                  userVerificationQuestion.text = newValue;
+                                  // You can also directly update your newUser object if it's accessible here
+                                  // newUser.userVerificationQuestion = newValue;
+                                }
+                                else{
+                                }
                               },
                               style: TextStyle(
-                                color: Colors.black, // Set the text color
-                                fontSize: 20, // Set the text size
+                                color: Colors.black,
+                                fontSize: 20,
                               ),
-                              icon: Icon(Icons.arrow_drop_down), // Set the dropdown icon
-                              iconSize: 24, // Set the dropdown icon size
+                              icon: Icon(Icons.arrow_drop_down),
+                              iconSize: 24,
                               items: <String>[
                                 'What is your favorite color?',
                                 'What is your pet\'s name?',
@@ -211,6 +265,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
+                              controller: userVerificationAnswer,
                               decoration: InputDecoration(
                                 hintText: "Answer",
                                 fillColor: Colors.white,
@@ -230,9 +285,103 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           SizedBox(height: 10),
                           TextButton(
-                            onPressed: () {
-                              if (_formKey.currentState?.validate() ?? false) {
-                                // All fields are valid, handle registration action
+                            onPressed: () async {
+                              if (userPassword.text != confirmUserPassword.text) {
+                                // Display error alert dialog for password mismatch
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text("Error"),
+                                      content: Text("The password does not match. Please try again."),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context); // Close the dialog
+                                            confirmUserPassword.clear(); // Clear the confirm password field
+                                          },
+                                          child: Text("OK"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              } else {
+                                // Check if the username already exists in the database
+                                bool usernameExists = await db.checkUsernameExists(userName.text);
+
+                                if (usernameExists) {
+                                  // Username already exists, display an error message
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text("Error"),
+                                        content: Text("Username already exists. Please type a different username."),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context); // Close the dialog
+                                            },
+                                            child: Text("OK"),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                } else {
+                                  // Username is unique, proceed with user registration
+                                  final newUser = Users(
+                                    firstName: firstName.text,
+                                    lastName: lastName.text,
+                                    userName: userName.text,
+                                    userPassword: userPassword.text,
+                                    userVerificationQuestion: userVerificationQuestion.text,
+                                    userVerificationAnswer: userVerificationAnswer.text,
+                                  );
+                                  int userId = await db.createUser(newUser);
+                                  bool registrationSuccess = userId != -1; // Check if the user ID is valid
+                                  if (registrationSuccess) {
+                                    // Display success dialog
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text("Success"),
+                                          content: Text("Registration successful!"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context); // Close the dialog
+                                                Navigator.pop(context, true); // Navigate back with success flag
+                                              },
+                                              child: Text("OK"),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    // Display error dialog for unsuccessful registration
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text("Error"),
+                                          content: Text("Registration unsuccessful. Please try again."),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context); // Close the dialog
+                                              },
+                                              child: Text("OK"),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  }
+                                }
                               }
                             },
                             child: FittedBox(
@@ -260,6 +409,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               minimumSize: Size(190, 50),
                             ),
                           ),
+
                         ],
                       ),
                     ),
