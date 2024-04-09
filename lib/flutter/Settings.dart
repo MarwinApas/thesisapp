@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
+import 'package:thesis_app/changePasswordPage.dart';
+import 'package:thesis_app/changeUsernamePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
+
 
 class Settings extends StatefulWidget {
   const Settings({Key? key});
@@ -96,6 +99,7 @@ class _SettingsState extends State<Settings> {
                           ],
                         ),
                       )
+
                     ],
                   ),
                 ),
@@ -129,7 +133,13 @@ class _SettingsState extends State<Settings> {
                 child: Flexible(
                   child: ElevatedButton(
                     onPressed: () {
-                      // Add your functionality here
+                      // Perform logout logic here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => changeUsernamePage(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -166,7 +176,13 @@ class _SettingsState extends State<Settings> {
                     )),
                 child: ElevatedButton(
                   onPressed: () {
-                    // Add your functionality here
+                      // Perform logout logic here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => changePasswordPage(),
+                        ),
+                      );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -348,7 +364,6 @@ class _SettingsState extends State<Settings> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 50),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -420,48 +435,7 @@ class _SettingsState extends State<Settings> {
               ),
             ),
           ),
-          Positioned(
-            bottom: 20,
-            left: 156,
-            child: Container(
-              width: 80,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black,
-                border: Border.all(
-                  color: Colors.black,
-                  width: 3,
-                ),
-              ),
-              child: Center(
-                child: Container(
-                  width: 70,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 5,
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add,
-                          size: 50,
-                          color: Colors.white,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+
         ],
 
       ),

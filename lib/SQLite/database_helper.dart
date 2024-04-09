@@ -76,4 +76,27 @@ class DatabaseHelper {
         var res = await db.query("users", where: 'userName = ? AND userVerificationQuestion = ? AND userVerificationAnswer = ?', whereArgs: [username, question, answer]);
         return res.isNotEmpty;
     }
+
+    Future<bool> updateUserPassword(String userName, String newUserPassword) async {
+        final Database db = await initDB();
+        var res = await db.update(
+            "users",
+            {'userPassword': newUserPassword},
+            where: 'userName = ?',
+            whereArgs: [userName],
+        );
+        return res > 0; // Returns true if at least one row was affected
+    }
+
+    Future<bool> updateUsername(String oldUsername, String newUsername) async {
+        final Database db = await initDB();
+        var res = await db.update(
+            "users",
+            {'userName': newUsername},
+            where: 'userName = ?',
+            whereArgs: [oldUsername],
+        );
+        return res > 0; // Returns true if at least one row was affected
+    }
 }
+

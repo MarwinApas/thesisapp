@@ -2,31 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 
-class changePasswordPage extends StatefulWidget {
-  const changePasswordPage({Key? key}) : super(key: key);
+class changeUsernamePage extends StatefulWidget {
+  const changeUsernamePage({Key? key}) : super(key: key);
 
   @override
-  _ChangePasswordPageState createState() => _ChangePasswordPageState();
+  _ChangeUsernamePageState createState() => _ChangeUsernamePageState();
 }
 
-class _ChangePasswordPageState extends State<changePasswordPage> {
-  final userName = TextEditingController();
-  final newUserPassword = TextEditingController();
+class _ChangeUsernamePageState extends State<changeUsernamePage> {
+  final newUsername = TextEditingController();
+  final password = TextEditingController();
 
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required';
-    } else if (value != newUserPassword.text) {
-      return 'Passwords do not match';
     }
     return null;
   }
 
-  void changePassword() async {
-    String username = userName.text.trim(); // Get the username of the current user
-    String newPassword = newUserPassword.text.trim();
+  void changeUsername() async {
+    String username = newUsername.text.trim();
+    String userPassword = password.text.trim();
 
-    if (username.isEmpty || newPassword.isEmpty) {
+    if (username.isEmpty || userPassword.isEmpty) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -44,23 +42,21 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
           );
         },
       );
-      return; // Exit the method if username or password is empty
+      return;
     }
 
-    bool passwordUpdated = await DatabaseHelper().updateUserPassword(username, newPassword);
+    bool usernameUpdated = await DatabaseHelper().updateUsername(username, userPassword);
 
-    if (passwordUpdated) {
-      // Password updated successfully, show a success dialog
+    if (usernameUpdated) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text("Success"),
-            content: Text("Password has been changed."),
+            content: Text("Username has been changed."),
             actions: [
               TextButton(
                 onPressed: () {
-                  // Navigate to LoginPage
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => LoginPage()),
@@ -74,13 +70,12 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
         },
       );
     } else {
-      // Failed to update password, show an error message
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text("Error"),
-            content: Text("Failed to change password. Please try again."),
+            content: Text("Failed to change username. Please try again."),
             actions: [
               TextButton(
                 onPressed: () {
@@ -152,7 +147,6 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Form(
-                      //key: _formKey,
                       autovalidateMode: AutovalidateMode.disabled,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -162,9 +156,9 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: userName,
+                              controller: newUsername,
                               decoration: InputDecoration(
-                                hintText: "Enter Username",
+                                hintText: "Enter new Username",
                                 fillColor: Colors.white,
                                 filled: true,
                                 border: OutlineInputBorder(
@@ -182,21 +176,21 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                           ),
                           SizedBox(height: 10),
                           Container(
-                            width: 300, // Adjust the width as needed
+                            width: 300,
+                            alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: newUserPassword,
+                              controller: password,
                               obscureText: isVisible,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.lock),
                                 suffixIcon: IconButton(
                                   onPressed: (){
                                     setState(() {
-                                      //toggle button
                                       isVisible = !isVisible;
                                     });
                                   }, icon: Icon(isVisible?Icons.visibility_off:Icons.visibility),
                                 ),
-                                hintText: "Enter new Password",
+                                hintText: "Enter Password",
                                 fillColor: Colors.white,
                                 filled: true,
                                 border: OutlineInputBorder(
@@ -204,19 +198,14 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                                   borderSide: BorderSide.none,
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                return null;
-                              },
+                              validator: validatePassword,
                             ),
                           ),
                           SizedBox(height: 30),
                           TextButton(
-                            onPressed: changePassword, // Call the changePassword method
+                            onPressed: changeUsername,
                             child: Text(
-                              "Change Password",
+                              "Change Username",
                               style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -235,7 +224,6 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                               minimumSize: Size(250, 50),
                             ),
                           ),
-
                           SizedBox(height: 10),
                         ],
                       ),
