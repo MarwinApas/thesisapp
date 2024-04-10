@@ -98,5 +98,24 @@ class DatabaseHelper {
         );
         return res > 0; // Returns true if at least one row was affected
     }
+
+    //gets the firstname and lastname based from the username
+    Future<Map<String, String>?> fetchUserName(String userName) async {
+        final Database db = await initDB();
+        var res = await db.query(
+            "users",
+            columns: ['firstName', 'lastName'],
+            where: "userName = ?",
+            whereArgs: [userName],
+        );
+        if (res.isNotEmpty) {
+            return {
+                'firstName': res.first['firstName'] as String,
+                'lastName': res.first['lastName'] as String,
+            };
+        } else {
+            return null;
+        }
+    }
 }
 

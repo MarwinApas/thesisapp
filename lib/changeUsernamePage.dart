@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
+import 'package:thesis_app/flutter/Settings.dart';
 
 class changeUsernamePage extends StatefulWidget {
   const changeUsernamePage({Key? key}) : super(key: key);
@@ -93,7 +94,15 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
   bool isVisible = true;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context)=>Settings())
+        );
+        return false;
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       body: Stack(
         children: [
@@ -105,7 +114,10 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
                 padding: const EdgeInsets.all(20.0),
                 child: TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context)=>Settings())
+                    );
                   },
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
@@ -235,6 +247,7 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
           )
         ],
       ),
+    ),
     );
   }
 }

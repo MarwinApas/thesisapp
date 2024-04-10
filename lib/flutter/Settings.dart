@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
-import 'package:thesis_app/changePasswordPage.dart';
 import 'package:thesis_app/changeUsernamePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
-
+import 'package:thesis_app/settingsChangePasswordPage.dart';
+import 'package:thesis_app/SQLite/database_helper.dart'; // Import your DatabaseHelper class
 
 class Settings extends StatefulWidget {
   const Settings({Key? key});
@@ -15,282 +15,273 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
+  String firstName = ''; // Initialize variables to hold first name and last name
+  String lastName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Call fetchUserName with the logged-in username
+    fetchUserName('userName'); // Replace 'userName' with the actual logged-in username
+  }
+
+  Future<void> fetchUserName(String username) async {
+    // Fetch the first name and last name from the database based on the username
+    Map<String, String>? userData = await DatabaseHelper().fetchUserName(username);
+    if (userData != null) {
+      setState(() {
+        firstName = userData['firstName'] ?? ''; // Update firstName variable
+        lastName = userData['lastName'] ?? ''; // Update lastName variable
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () async {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => WelcomePage()),
-      );
-      return false;
-    },
-    child: Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Color(0xff02022d),
-        iconTheme: IconThemeData(color: Colors.white),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
+      onWillPop: () async {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => WelcomePage()),
+        );
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          backgroundColor: Color(0xff02022d),
+          iconTheme: IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => WelcomePage()),
+              );
+            },
           ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => WelcomePage()),
-            );
-          },
-        ),
-        title: Text(
-          "SETTINGS",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: Colors.white,
+          title: Text(
+            "SETTINGS",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.white,
+            ),
           ),
         ),
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 250,
-                decoration: BoxDecoration(
-                  color: Color(0xE0FFFFFF), //Color(0xE0FFFFFF)
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 30),
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.black,
-                            width: 4,
-                          ),
-                        ),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.person_rounded,
-                                size: 130,
-                                color: Colors.black,
-                              ),
-                            ],
-                          ),
+        body: Column(
+          children: [
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 250,
+              decoration: BoxDecoration(
+                color: Color(0xE0FFFFFF),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 30),
+                    Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 4,
                         ),
                       ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      child: Center(
+                        child: Column(
                           children: [
-                            Text(
-                              "HELLO, MARWIN JAKE APAS!",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(width: 5),
                             Icon(
-                              Icons.edit,
+                              Icons.person_rounded,
+                              size: 130,
+                              color: Colors.black,
                             ),
                           ],
                         ),
-                      )
-
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 25,
-                decoration: BoxDecoration(
-                  color: Colors.grey,
-                ),
-                child: Text(
-                  "ACCOUNT",
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    color: Color(0x86262626),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 35,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      top: BorderSide(color: Colors.grey, width: 2),
-                      bottom: BorderSide(color: Colors.grey, width: 2),
-                    )),
-                child: Flexible(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Perform logout logic here
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => changeUsernamePage(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      elevation: 0, // No shadow
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(0),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          "CHANGE NAME",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                    SizedBox(height: 20),
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "HELLO, ${firstName.isNotEmpty && lastName.isNotEmpty  ? '$firstName $lastName' : 'USER'} !",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Spacer(),
-                        Icon(Icons.arrow_right),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 35,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey, width: 2),
-                    )),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Perform logout logic here
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => changePasswordPage(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    elevation: 0, // No shadow
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(0),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        "CHANGE PASSWORD",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Spacer(),
-                      Icon(Icons.arrow_right),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: Colors.grey,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
-                        content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text("Cancel"),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              // Perform logout logic here
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LoginPage(),
-                                ),
-                              );
-                            },
-                            child: Text("Confirm"),
+                          SizedBox(width: 5),
+                          Icon(
+                            Icons.edit,
                           ),
                         ],
-                      );
-                    },
-                  );
-                },
-                child:Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 35,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey, width: 2),
-                      )),
-                  child: Row(
-                    children: [
-                      Text(
-                        "LOGOUT",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
                       ),
-                      SizedBox(width: MediaQuery.of(context).size.width *.7,),
-                      Icon(Icons.logout),
-                    ],
-                  ),
+                    )
+                  ],
                 ),
               ),
-              SizedBox(height: 185),
-            ],
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 90,  // Adjust the height as needed
-              color: Color(0xff02022d),  // Adjust the color as needed
-
+            ),
+            SizedBox(height: 10),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 25,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+              ),
+              child: Text(
+                "  ACCOUNT",
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  color: Color(0x86262626),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => changeUsernamePage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                primary: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "CHANGE USERNAME",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Icon(Icons.arrow_right),
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => settingsChangePasswordPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                primary: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "CHANGE PASSWORD",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Icon(Icons.arrow_right),
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 25,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+              ),
+              child: Text(
+                "",
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  color: Color(0x86262626),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
+                      content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Perform logout logic here
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginPage(),
+                              ),
+                            );
+                          },
+                          child: Text("Confirm"),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey, width: 2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "LOGOUT",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Icon(Icons.logout),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            Expanded(
+              child: SizedBox(),
+            ),
+            Container(
+              height: 90,
+              color: Color(0xff02022d),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -432,23 +423,17 @@ class _SettingsState extends State<Settings> {
                         SizedBox(height: 5),
                         Text(
                           'SETTINGS',
-                          style: TextStyle(color: Colors.white,
-                              fontSize: 12.5),
+                          style: TextStyle(color: Colors.white, fontSize: 12.5),
                         ),
                       ],
                     ),
-
                   ),
                 ],
               ),
             ),
-          ),
-
-        ],
-
+          ],
+        ),
       ),
-
-    ),
     );
   }
 }
