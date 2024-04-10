@@ -75,7 +75,15 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) { // Implement build method
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async{
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context)=>Home())
+        );
+        return false;
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       body: Stack(
         children: [
@@ -241,6 +249,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+    ),
     );
   }
 }

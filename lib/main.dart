@@ -13,8 +13,11 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return
-      Scaffold(
+    return WillPopScope(
+      onWillPop: () async{
+        return false;
+      },
+    child:Scaffold(
         backgroundColor: Color(0xE0FFFFFF),
         body: Center(
           child: FittedBox(
@@ -129,6 +132,7 @@ class Home extends StatelessWidget {
         ),
           )
         ),
-      );
+      ),
+    );
   }
 }

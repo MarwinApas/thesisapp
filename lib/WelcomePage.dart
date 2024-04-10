@@ -9,7 +9,40 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("login page", style: TextStyle(fontWeight: FontWeight.bold),),
+              content: Text("Are you sure you want to go back to the login page?", style: TextStyle(fontSize: 16),),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Perform logout logic here
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginPage(),
+                      ),
+                    );
+                  },
+                  child: Text("Confirm"),
+                ),
+              ],
+            );
+          },
+        );
+        return false; // Prevents the default back navigation behavior
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       appBar: AppBar(
         centerTitle: true,
@@ -305,6 +338,7 @@ class WelcomePage extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

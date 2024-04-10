@@ -13,7 +13,15 @@ class Alerts extends StatefulWidget {
 class _AlertsState extends State<Alerts> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => WelcomePage()),
+        );
+        return false;
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
@@ -274,6 +282,7 @@ class _AlertsState extends State<Alerts> {
           ),
         ],
       ),
+    ),
     );
   }
 }

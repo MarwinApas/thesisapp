@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thesis_app/JsonModels/users.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
+import 'package:thesis_app/main.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -64,7 +65,15 @@ Future<void> registerUser() async {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async{
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context)=>Home())
+        );
+        return false;
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.black),
@@ -419,6 +428,7 @@ Future<void> registerUser() async {
             ),
         ],
       ),
+    ),
     );
   }
 }

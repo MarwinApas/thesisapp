@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
+import 'package:thesis_app/forgotPasswordPage.dart';
 
 class changePasswordPage extends StatefulWidget {
   const changePasswordPage({Key? key}) : super(key: key);
@@ -98,7 +99,15 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
   bool isVisible = true;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async{
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context)=>ForgotPasswordPage())
+        );
+        return false;
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       body: Stack(
         children: [
@@ -247,6 +256,7 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
           )
         ],
       ),
+    ),
     );
   }
 }

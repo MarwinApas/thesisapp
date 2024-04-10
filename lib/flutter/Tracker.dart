@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:thesis_app/InsideTrackerPage.dart';
-import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Settings.dart';
-import 'package:thesis_app/main.dart';
+
 
 class Tracker extends StatefulWidget {
   const Tracker({Key? key}) : super(key: key);
@@ -16,7 +14,15 @@ class Tracker extends StatefulWidget {
 class _TrackerState extends State<Tracker> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async{
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) =>WelcomePage())
+        );
+        return false;
+      },
+    child: Scaffold(
       backgroundColor: Color(0xE0FFFFFF),
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
@@ -250,6 +256,7 @@ class _TrackerState extends State<Tracker> {
           ),
         ],
       ),
+    ),
     );
   }
 }

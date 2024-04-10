@@ -17,7 +17,15 @@ class Settings extends StatefulWidget {
 class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => WelcomePage()),
+      );
+      return false;
+    },
+    child: Scaffold(
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Color(0xff02022d),
@@ -176,13 +184,13 @@ class _SettingsState extends State<Settings> {
                     )),
                 child: ElevatedButton(
                   onPressed: () {
-                      // Perform logout logic here
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => changePasswordPage(),
-                        ),
-                      );
+                    // Perform logout logic here
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => changePasswordPage(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -440,6 +448,7 @@ class _SettingsState extends State<Settings> {
 
       ),
 
+    ),
     );
   }
 }
