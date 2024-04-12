@@ -8,7 +8,8 @@ import 'package:thesis_app/settingsChangePasswordPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart'; // Import your DatabaseHelper class
 
 class Settings extends StatefulWidget {
-  const Settings({Key? key});
+  final String? userName; // Add this line to declare the userName parameter
+  const Settings({Key? key, this.userName}) : super(key: key);
 
   @override
   State<Settings> createState() => _SettingsState();
@@ -21,19 +22,26 @@ class _SettingsState extends State<Settings> {
   @override
   void initState() {
     super.initState();
-    // Call fetchUserName with the logged-in username
-    fetchUserName('userName'); // Replace 'userName' with the actual logged-in username
+    fetchUserData();
   }
 
-  Future<void> fetchUserName(String username) async {
-    // Fetch the first name and last name from the database based on the username
-    Map<String, String>? userData = await DatabaseHelper().fetchUserName(username);
-    if (userData != null) {
-      setState(() {
-        firstName = userData['firstName'] ?? ''; // Update firstName variable
-        lastName = userData['lastName'] ?? ''; // Update lastName variable
-      });
-    }
+
+  Future<void> fetchUserData() async {
+    // Fetch the user's data from the database based on the passed userName
+    await DatabaseHelper().fetchUserName(widget.userName ?? '').then((userData) {
+      if (userData != null) {
+        setState(() {
+          firstName = userData['firstName'] ?? ''; // Update firstName variable
+          lastName = userData['lastName'] ?? ''; // Update lastName variable
+        });
+      }
+    });
+  }
+  void updateName(String newFirstName, String newLastName) {
+    setState(() {
+      firstName = newFirstName;
+      lastName = newLastName;
+    });
   }
 
   @override
@@ -59,7 +67,7 @@ class _SettingsState extends State<Settings> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => WelcomePage()),
+                MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
               );
             },
           ),
@@ -113,7 +121,7 @@ class _SettingsState extends State<Settings> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "HELLO, ${firstName.isNotEmpty && lastName.isNotEmpty  ? '$firstName $lastName' : 'USER'} !",
+                            "HELLO, ${firstName.isNotEmpty && lastName.isNotEmpty  ? '${firstName.toUpperCase()} ${lastName.toUpperCase()}' : 'USER'} !",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -152,7 +160,7 @@ class _SettingsState extends State<Settings> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => changeUsernamePage()),
+                  MaterialPageRoute(builder: (context) => changeUsernamePage(userName: widget.userName)),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -179,7 +187,7 @@ class _SettingsState extends State<Settings> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => settingsChangePasswordPage()),
+                  MaterialPageRoute(builder: (context) => settingsChangePasswordPage(userName: widget.userName)),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -290,7 +298,7 @@ class _SettingsState extends State<Settings> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WelcomePage(),
+                          builder: (context) => WelcomePage(userName: widget.userName),
                         ),
                       );
                     },
@@ -324,7 +332,7 @@ class _SettingsState extends State<Settings> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Tracker(),
+                          pageBuilder: (_, __, ___) => Tracker(userName: widget.userName),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,
@@ -368,7 +376,7 @@ class _SettingsState extends State<Settings> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Alerts(),
+                          pageBuilder: (_, __, ___) => Alerts(userName: widget.userName),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,

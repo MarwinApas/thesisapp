@@ -13,7 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
+  String? loggedInUsername;
   final userName = TextEditingController();
   final userPassword = TextEditingController();
   final db = DatabaseHelper();
@@ -45,7 +45,8 @@ class _LoginPageState extends State<LoginPage> {
       var res = await db.authenticate(Users(userName:userName.text,userPassword:userPassword.text));
       if (res == true) {
         if (!mounted) return;
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomePage()));
+        loggedInUsername = userName.text;
+        Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomePage(userName:loggedInUsername)));
       } else {
         showDialog(
           context: context,

@@ -5,7 +5,8 @@ import 'package:thesis_app/flutter/Settings.dart';
 
 
 class Tracker extends StatefulWidget {
-  const Tracker({Key? key}) : super(key: key);
+  final String? userName; // Add this line to declare the userName parameter
+  const Tracker({Key? key, this.userName}) : super(key: key);
 
   @override
   _TrackerState createState() => _TrackerState();
@@ -18,7 +19,7 @@ class _TrackerState extends State<Tracker> {
       onWillPop: () async{
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) =>WelcomePage())
+          MaterialPageRoute(builder: (context) =>WelcomePage(userName: widget.userName))
         );
         return false;
       },
@@ -34,7 +35,7 @@ class _TrackerState extends State<Tracker> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context)=>WelcomePage()),
+              MaterialPageRoute(builder: (context)=>WelcomePage(userName: widget.userName)),
             );
           },
         ),
@@ -68,7 +69,7 @@ class _TrackerState extends State<Tracker> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WelcomePage(),
+                          builder: (context) => WelcomePage(userName: widget.userName),
                         ),
                       );
                     },
@@ -130,7 +131,7 @@ class _TrackerState extends State<Tracker> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Alerts(),
+                          pageBuilder: (_, __, ___) => Alerts(userName: widget.userName),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,
@@ -171,7 +172,7 @@ class _TrackerState extends State<Tracker> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Settings(),
+                          pageBuilder: (_, __, ___) => Settings(userName: widget.userName),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,

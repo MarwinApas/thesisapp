@@ -54,6 +54,18 @@ class DatabaseHelper {
         return res.isNotEmpty ? Users.fromMap(res.first) : null;
     }
 
+    Future<String?> getLoggedInUsername() async {
+        final Database db = await initDB();
+        // Assuming you have a way to store the logged-in username, such as in shared preferences or a global variable
+        String? loggedInUsername = await DatabaseHelper().getLoggedInUsername();
+        var res = await db.query(
+            "users",
+            columns: ['userName'],
+            where: "userName = ?",
+            whereArgs: [loggedInUsername],
+        );
+        return res.isNotEmpty ? res.first['userName'] as String : null;
+    }
 
     Future<String?> getVerificationQuestion(String userName) async {
         final Database db = await initDB();

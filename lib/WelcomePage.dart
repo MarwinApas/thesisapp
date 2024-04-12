@@ -5,7 +5,9 @@ import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
 
 class WelcomePage extends StatelessWidget {
-  const WelcomePage({Key? key});
+  final String? userName; // Add this line to declare the userName parameter
+  const WelcomePage({Key? key, this.userName}) : super(key: key);
+
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +134,7 @@ class WelcomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Tracker(),
+                                  builder: (context) => Tracker(userName: userName),
                                 ),
                               );
                             },
@@ -173,7 +175,7 @@ class WelcomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Alerts(),
+                                  builder: (context) => Alerts(userName: userName),
                                 ),
                               );
                             },
@@ -228,7 +230,7 @@ class WelcomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Settings(),
+                                  builder: (context) => Settings(userName: userName),
                                 ),
                               );
                             },

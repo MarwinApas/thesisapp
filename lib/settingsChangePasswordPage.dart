@@ -5,7 +5,8 @@ import 'package:thesis_app/flutter/Settings.dart';
 
 
 class settingsChangePasswordPage extends StatefulWidget {
-  const settingsChangePasswordPage({Key? key}) : super(key: key);
+  final String? userName; // Add this line to declare the userName parameter
+  const settingsChangePasswordPage({Key? key, this.userName}) : super(key: key);
 
   @override
   _settingsChangePasswordPage createState() => _settingsChangePasswordPage();
@@ -104,7 +105,7 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
       onWillPop: () async{
         Navigator.push(
             context,
-            MaterialPageRoute(builder: (context)=>Settings())
+            MaterialPageRoute(builder: (context)=>Settings(userName: widget.userName))
         );
         return false;
       },
@@ -122,7 +123,7 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
                     onPressed: () {
                       Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context)=>Settings())
+                          MaterialPageRoute(builder: (context)=>Settings(userName: widget.userName))
                       );
                     },
                     child: FittedBox(

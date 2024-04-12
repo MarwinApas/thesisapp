@@ -4,7 +4,8 @@ import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
 
 class Alerts extends StatefulWidget {
-  const Alerts({Key? key});
+  final String? userName; // Add this line to declare the userName parameter
+  const Alerts({Key? key, this.userName}) : super(key: key);
 
   @override
   State<Alerts> createState() => _AlertsState();
@@ -136,7 +137,7 @@ class _AlertsState extends State<Alerts> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WelcomePage(),
+                          builder: (context) => WelcomePage(userName: widget.userName),
                         ),
                       );
                     },
@@ -170,7 +171,7 @@ class _AlertsState extends State<Alerts> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Tracker(),
+                          pageBuilder: (_, __, ___) => Tracker(userName: widget.userName),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,
@@ -239,7 +240,7 @@ class _AlertsState extends State<Alerts> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Settings(),
+                          pageBuilder: (_, __, ___) => Settings(userName: widget.userName),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,

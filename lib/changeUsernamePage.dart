@@ -4,7 +4,8 @@ import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/flutter/Settings.dart';
 
 class changeUsernamePage extends StatefulWidget {
-  const changeUsernamePage({Key? key}) : super(key: key);
+  final String? userName; // Add this line to declare the userName parameter
+  const changeUsernamePage({Key? key, this.userName}) : super(key: key);
 
   @override
   _ChangeUsernamePageState createState() => _ChangeUsernamePageState();
@@ -98,7 +99,7 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
       onWillPop: () async {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context)=>Settings())
+          MaterialPageRoute(builder: (context)=>Settings(userName: widget.userName))
         );
         return false;
       },
@@ -116,7 +117,7 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
                   onPressed: () {
                     Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context)=>Settings())
+                        MaterialPageRoute(builder: (context)=>Settings(userName: widget.userName))
                     );
                   },
                   child: FittedBox(

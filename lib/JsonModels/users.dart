@@ -43,4 +43,3 @@ class Users {
         "userVerificationAnswer": userVerificationAnswer,
     };
 }
-
