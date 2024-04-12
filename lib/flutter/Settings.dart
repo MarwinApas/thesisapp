@@ -5,7 +5,9 @@ import 'package:thesis_app/changeUsernamePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
 import 'package:thesis_app/settingsChangePasswordPage.dart';
-import 'package:thesis_app/SQLite/database_helper.dart'; // Import your DatabaseHelper class
+import 'package:thesis_app/SQLite/database_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class Settings extends StatefulWidget {
   final String? userName; // Add this line to declare the userName parameter
@@ -22,13 +24,16 @@ class _SettingsState extends State<Settings> {
   @override
   void initState() {
     super.initState();
+
     fetchUserData();
   }
 
 
   Future<void> fetchUserData() async {
     // Fetch the user's data from the database based on the passed userName
-    await DatabaseHelper().fetchUserName(widget.userName ?? '').then((userData) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userName = prefs.getString('userName');
+    await DatabaseHelper().fetchUserName(userName ?? '').then((userData) {
       if (userData != null) {
         setState(() {
           firstName = userData['firstName'] ?? ''; // Update firstName variable
@@ -160,7 +165,7 @@ class _SettingsState extends State<Settings> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => changeUsernamePage(userName: widget.userName)),
+                  MaterialPageRoute(builder: (context) => changeUsernamePage(/*userName: widget.userName*/)),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -187,7 +192,7 @@ class _SettingsState extends State<Settings> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => settingsChangePasswordPage(userName: widget.userName)),
+                  MaterialPageRoute(builder: (context) => settingsChangePasswordPage()),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -298,7 +303,7 @@ class _SettingsState extends State<Settings> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WelcomePage(userName: widget.userName),
+                          builder: (context) => WelcomePage(),
                         ),
                       );
                     },
@@ -332,7 +337,7 @@ class _SettingsState extends State<Settings> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Tracker(userName: widget.userName),
+                          pageBuilder: (_, __, ___) => Tracker(),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,
@@ -376,7 +381,7 @@ class _SettingsState extends State<Settings> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Alerts(userName: widget.userName),
+                          pageBuilder: (_, __, ___) => Alerts(),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,

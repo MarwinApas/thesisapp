@@ -69,7 +69,7 @@ class _TrackerState extends State<Tracker> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WelcomePage(userName: widget.userName),
+                          builder: (context) => WelcomePage(),
                         ),
                       );
                     },
@@ -131,7 +131,7 @@ class _TrackerState extends State<Tracker> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Alerts(userName: widget.userName),
+                          pageBuilder: (_, __, ___) => Alerts(),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,

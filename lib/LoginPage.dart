@@ -4,6 +4,7 @@ import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/forgotPasswordPage.dart';
 import 'package:thesis_app/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -19,6 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   final db = DatabaseHelper();
 
   bool isLoginTrue = false;
+  bool isVisible = true;
+
   Future<void> login() async {
     // Check if the username exists
     bool usernameExists = await db.checkUsernameExists(userName.text);
@@ -46,7 +49,11 @@ class _LoginPageState extends State<LoginPage> {
       if (res == true) {
         if (!mounted) return;
         loggedInUsername = userName.text;
-        Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomePage(userName:loggedInUsername)));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomePage(/*userName:loggedInUsername*/)));
+
+        // Save the username to SharedPreferences after successful login
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('userName', userName.text); // Save the username
       } else {
         showDialog(
           context: context,
@@ -68,11 +75,6 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-
-
-
-
-  bool isVisible = true;
 
   @override
   Widget build(BuildContext context) { // Implement build method
@@ -203,6 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(height: 10),
                         TextButton(
                           onPressed: login,
+
                           child: Text(
                             "Login",
                             style: TextStyle(

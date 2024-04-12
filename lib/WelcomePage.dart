@@ -134,7 +134,7 @@ class WelcomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Tracker(userName: userName),
+                                  builder: (context) => Tracker(),
                                 ),
                               );
                             },
@@ -175,7 +175,7 @@ class WelcomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Alerts(userName: userName),
+                                  builder: (context) => Alerts(),
                                 ),
                               );
                             },

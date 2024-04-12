@@ -137,7 +137,7 @@ class _AlertsState extends State<Alerts> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => WelcomePage(userName: widget.userName),
+                          builder: (context) => WelcomePage(),
                         ),
                       );
                     },
@@ -171,7 +171,7 @@ class _AlertsState extends State<Alerts> {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Tracker(userName: widget.userName),
+                          pageBuilder: (_, __, ___) => Tracker(),
                           transitionsBuilder: (_, animation, __, child) {
                             return FadeTransition(
                               opacity: animation,
