@@ -165,7 +165,7 @@ class _SettingsState extends State<Settings> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => changeUsernamePage(/*userName: widget.userName*/)),
+                  MaterialPageRoute(builder: (context) => changeUsernamePage(userName: widget.userName)),
                 );
               },
               style: ElevatedButton.styleFrom(

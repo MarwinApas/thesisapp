@@ -5,8 +5,7 @@ import 'package:thesis_app/flutter/Settings.dart';
 
 
 class settingsChangePasswordPage extends StatefulWidget {
-  final String? userName; // Add this line to declare the userName parameter
-  const settingsChangePasswordPage({Key? key, this.userName}) : super(key: key);
+
 
   @override
   _settingsChangePasswordPage createState() => _settingsChangePasswordPage();
@@ -28,7 +27,6 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
   void changePassword() async {
     String username = userName.text.trim(); // Get the username of the current user
     String newPassword = newUserPassword.text.trim();
-
     if (username.isEmpty || newPassword.isEmpty) {
       showDialog(
         context: context,
@@ -105,7 +103,7 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
       onWillPop: () async{
         Navigator.push(
             context,
-            MaterialPageRoute(builder: (context)=>Settings(userName: widget.userName))
+            MaterialPageRoute(builder: (context)=>Settings())
         );
         return false;
       },
@@ -123,7 +121,7 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
                     onPressed: () {
                       Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context)=>Settings(userName: widget.userName))
+                          MaterialPageRoute(builder: (context)=>Settings())
                       );
                     },
                     child: FittedBox(

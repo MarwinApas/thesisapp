@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/flutter/Settings.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class changeUsernamePage extends StatefulWidget {
   final String? userName; // Add this line to declare the userName parameter
@@ -23,10 +24,16 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
   }
 
   void changeUsername() async {
-    String username = newUsername.text.trim();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userName = prefs.getString('userName');
+    String? storedPassword = await DatabaseHelper().getLoggedInUserPassword(); // Use the method to get stored password
+    String newUserName = newUsername.text.trim();
     String userPassword = password.text.trim();
 
-    if (username.isEmpty || userPassword.isEmpty) {
+    print('Stored Password: $storedPassword');
+    print('Entered Password: $userPassword');
+
+    if (newUserName.isEmpty || userPassword.isEmpty) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -47,50 +54,72 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
       return;
     }
 
-    bool usernameUpdated = await DatabaseHelper().updateUsername(username, userPassword);
-
-    if (usernameUpdated) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Success"),
-            content: Text("Username has been changed."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                        (Route<dynamic> route) => false,
-                  );
-                },
-                child: Text("OK"),
-              ),
-            ],
+    if (userName != null) {
+      if (storedPassword == userPassword) {
+        bool usernameUpdated = await DatabaseHelper().updateUsername(userName, newUserName);
+        if (usernameUpdated) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Success"),
+                content: Text("Username has been changed."),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginPage()),
+                            (Route<dynamic> route) => false,
+                      );
+                    },
+                    child: Text("OK"),
+                  ),
+                ],
+              );
+            },
           );
-        },
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Error"),
-            content: Text("Failed to change username. Please try again."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text("OK"),
-              ),
-            ],
+        } else {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Error"),
+                content: Text("Failed to change username. Please try again."),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("OK"),
+                  ),
+                ],
+              );
+            },
           );
-        },
-      );
+        }
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Error"),
+              content: Text("Incorrect Password. Please try again."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      }
     }
   }
+
 
   bool isVisible = true;
   @override
@@ -252,3 +281,4 @@ class _ChangeUsernamePageState extends State<changeUsernamePage> {
     );
   }
 }
+

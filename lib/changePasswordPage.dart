@@ -25,7 +25,7 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
   }
 
   void changePassword() async {
-    String username = userName.text.trim(); // Get the username of the current user
+    String username = userName.text.trim();
     String newPassword = newUserPassword.text.trim();
 
     if (username.isEmpty || newPassword.isEmpty) {

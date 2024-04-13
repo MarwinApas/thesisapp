@@ -1,7 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:thesis_app/JsonModels/users.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class DatabaseHelper {
     final databaseName = "usersDB.db";
 
@@ -109,6 +109,25 @@ class DatabaseHelper {
             whereArgs: [oldUsername],
         );
         return res > 0; // Returns true if at least one row was affected
+    }
+    // Get the userPassword of the current logged-in user from SharedPreferences
+    Future<String?> getLoggedInUserPassword() async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? loggedInUsername = prefs.getString('userName');
+
+        if (loggedInUsername != null) {
+            final Database db = await initDB();
+            var res = await db.query("users",
+                columns: ['userPassword'],
+                where: "userName = ?",
+                whereArgs: [loggedInUsername]);
+
+            if (res.isNotEmpty) {
+                return res.first['userPassword'] as String?;
+            }
+        }
+
+        return null; // Return null if user not found or userPassword not available
     }
 
     //gets the firstname and lastname based from the username
