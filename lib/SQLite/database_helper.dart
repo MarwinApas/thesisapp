@@ -110,6 +110,7 @@ class DatabaseHelper {
         );
         return res > 0; // Returns true if at least one row was affected
     }
+
     // Get the userPassword of the current logged-in user from SharedPreferences
     Future<String?> getLoggedInUserPassword() async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -147,6 +148,21 @@ class DatabaseHelper {
         } else {
             return null;
         }
+    }
+
+
+    Future<bool> updateName(String firstName, String lastName, String userName) async {
+        final Database db = await initDB();
+        var res = await db.update(
+            "users",
+            {
+                'firstName': firstName,
+                'lastName': lastName,
+            },
+            where: 'userName = ?',
+            whereArgs: [userName],
+        );
+        return res > 0; // Returns true if at least one row was affected
     }
 }
 

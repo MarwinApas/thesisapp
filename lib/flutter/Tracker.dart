@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Settings.dart';
+import 'package:thesis_app/trackerBox.dart';
 
 
 class Tracker extends StatefulWidget {
   final String? userName; // Add this line to declare the userName parameter
   const Tracker({Key? key, this.userName}) : super(key: key);
-
   @override
   _TrackerState createState() => _TrackerState();
+
+
 }
 
+
+
 class _TrackerState extends State<Tracker> {
+  final List _trackerBoxes =[
+    '',];
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -51,8 +57,14 @@ class _TrackerState extends State<Tracker> {
       ),
       body: Stack(
         children: [
-          // Your other widgets go here
-          // Container at the bottom
+          Container(
+            child:ListView.builder(
+              itemCount: _trackerBoxes.length,
+              itemBuilder: (context, index) {
+                return TrackerBox(boxName: _trackerBoxes[index]);
+              },
+            ),
+          ),
           Positioned(
             bottom: 0,
             left: 0,
@@ -216,39 +228,47 @@ class _TrackerState extends State<Tracker> {
           Positioned(
             bottom: 20,
             left: 156,
-            child: Container(
-              width: 80,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black,
-                border: Border.all(
+            child: GestureDetector(
+              onTap: () {
+                // Add your logic here for when the widget is clicked
+                setState(() {
+                  _trackerBoxes.add('');
+                });
+              },
+              child: Container(
+                width: 80,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   color: Colors.black,
-                  width: 3,
-                ),
-              ),
-              child: Center(
-                child: Container(
-                  width: 70,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                  border: Border.all(
                     color: Colors.black,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 5,
-                    ),
+                    width: 3,
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add,
-                          size: 50,
-                          color: Colors.white,
-                        ),
-                      ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 70,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 5,
+                      ),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

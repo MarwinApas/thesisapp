@@ -9,6 +9,7 @@ import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
+
 class Settings extends StatefulWidget {
   final String? userName; // Add this line to declare the userName parameter
   const Settings({Key? key, this.userName}) : super(key: key);
@@ -24,7 +25,6 @@ class _SettingsState extends State<Settings> {
   @override
   void initState() {
     super.initState();
-
     fetchUserData();
   }
 
@@ -42,12 +42,28 @@ class _SettingsState extends State<Settings> {
       }
     });
   }
-  void updateName(String newFirstName, String newLastName) {
-    setState(() {
-      firstName = newFirstName;
-      lastName = newLastName;
-    });
+
+  Future<bool> updateName(String firstName, String lastName, String userName) async {
+    // Update name in the database
+    bool updated = await DatabaseHelper().updateName(firstName, lastName, userName);
+    if (updated) {
+      // Update successful
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('firstName', firstName);
+      await prefs.setString('lastName', lastName);
+
+      // Update the displayed name in the UI
+      setState(() {
+        this.firstName = firstName;
+        this.lastName = lastName;
+      });
+    } else {
+      // Update failed
+      // Handle the failure or display an error message
+    }
+    return updated;
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -85,367 +101,424 @@ class _SettingsState extends State<Settings> {
             ),
           ),
         ),
-        body: Column(
-          children: [
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: 250,
-              decoration: BoxDecoration(
-                color: Color(0xE0FFFFFF),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 30),
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 4,
-                        ),
-                      ),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.person_rounded,
-                              size: 130,
-                              color: Colors.black,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "HELLO, ${firstName.isNotEmpty && lastName.isNotEmpty  ? '${firstName.toUpperCase()} ${lastName.toUpperCase()}' : 'USER'} !",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 5),
-                          Icon(
-                            Icons.edit,
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 10),
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: 25,
-              decoration: BoxDecoration(
-                color: Colors.grey,
-              ),
-              child: Text(
-                "  ACCOUNT",
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  color: Color(0x86262626),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => changeUsernamePage(userName: widget.userName)),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                primary: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "CHANGE USERNAME",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Icon(Icons.arrow_right),
-                ],
-              ),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => settingsChangePasswordPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                primary: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "CHANGE PASSWORD",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Icon(Icons.arrow_right),
-                ],
-              ),
-            ),
-            SizedBox(height: 10),
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: 25,
-              decoration: BoxDecoration(
-                color: Colors.grey,
-              ),
-              child: Text(
-                "",
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  color: Color(0x86262626),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
-                      content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            // Perform logout logic here
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => LoginPage(),
-                              ),
-                            );
-                          },
-                          child: Text("Confirm"),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+        body:  Column(
+            children: [
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 250,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey, width: 2),
+                  color: Color(0xE0FFFFFF),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 30),
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 4,
+                          ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.person_rounded,
+                                size: 130,
+                                color: Colors.black,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    TextEditingController _nameController = TextEditingController();
+
+                                    return AlertDialog(
+                                      title: Text("Edit Name"),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextField(
+                                            controller: _nameController,
+                                            decoration: InputDecoration(
+                                              labelText: 'New Name',
+                                              border: OutlineInputBorder(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () async {
+                                            String firstName = _nameController.text; // Retrieve the new first name
+                                            String lastName = ''; // Define or retrieve the new last name as needed
+
+                                            // Update name in the database
+                                            bool updated = await updateName(firstName, lastName, widget.userName ?? '');
+                                            if (updated) {
+                                              // Update successful
+                                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                                              await prefs.setString('firstName', firstName);
+                                              await prefs.setString('lastName', lastName);
+
+                                              // Optionally, update the displayed name in the UI (already done in updateName method)
+                                            } else {
+                                              // Update failed
+                                              // Handle the failure or display an error message
+                                            }
+
+                                            Navigator.pop(context); // Close the dialog
+                                          },
+                                          child: Text("Save"),
+                                        ),
+
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "HELLO, ${firstName.isNotEmpty && lastName.isNotEmpty ? '${firstName.toUpperCase()} ${lastName.toUpperCase()}' : 'USER'} !",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Icon(
+                                    Icons.edit,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          )
+
+                      )
+                    ],
                   ),
+                ),
+              ),
+              SizedBox(height: 10),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 25,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                ),
+                child: Text(
+                  "  ACCOUNT",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    color: Color(0x86262626),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => changeUsernamePage(userName: widget.userName)),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "LOGOUT",
-                      textAlign: TextAlign.center,
+                      "CHANGE USERNAME",
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Icon(Icons.logout),
+                    Icon(Icons.arrow_right),
                   ],
                 ),
               ),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: SizedBox(),
-            ),
-            Container(
-              height: 90,
-              color: Color(0xff02022d),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => WelcomePage(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(10.0),
-                        color: Color(0xE0FFFFFF),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.home,
-                            size: 30,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 5),
-                          Text(
-                            'HOME',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                        ],
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => settingsChangePasswordPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "CHANGE PASSWORD",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Tracker(),
-                          transitionsBuilder: (_, animation, __, child) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                          transitionDuration: Duration(milliseconds: 100),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(10.0),
-                        color: Color(0xE0FFFFFF),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.radar_sharp,
-                            size: 30,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 5),
-                          Text(
-                            'TRACKER',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 12.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (_, __, ___) => Alerts(),
-                          transitionsBuilder: (_, animation, __, child) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                          transitionDuration: Duration(milliseconds: 100),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(10.0),
-                        color: Color(0xE0FFFFFF),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notification_important,
-                            size: 30,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 5),
-                          Text(
-                            'ALERTS',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.rectangle,
-                      borderRadius: BorderRadius.circular(10.0),
-                      color: Colors.grey,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.settings,
-                          size: 30,
-                          color: Colors.white,
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          'SETTINGS',
-                          style: TextStyle(color: Colors.white, fontSize: 12.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                    Icon(Icons.arrow_right),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+              SizedBox(height: 10),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 25,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                ),
+                child: Text(
+                  "",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    color: Color(0x86262626),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
+                        content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Perform logout logic here
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
+                                ),
+                              );
+                            },
+                            child: Text("Confirm"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey, width: 2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "LOGOUT",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Icon(Icons.logout),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              Expanded(
+                child: SizedBox(),
+              ),
+              Container(
+                height: 90,
+                color: Color(0xff02022d),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WelcomePage(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.rectangle,
+                          borderRadius: BorderRadius.circular(10.0),
+                          color: Color(0xE0FFFFFF),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.home,
+                              size: 30,
+                              color: Colors.black,
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              'HOME',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (_, __, ___) => Tracker(),
+                            transitionsBuilder: (_, animation, __, child) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            transitionDuration: Duration(milliseconds: 100),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.rectangle,
+                          borderRadius: BorderRadius.circular(10.0),
+                          color: Color(0xE0FFFFFF),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.radar_sharp,
+                              size: 30,
+                              color: Colors.black,
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              'TRACKER',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (_, __, ___) => Alerts(),
+                            transitionsBuilder: (_, animation, __, child) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            transitionDuration: Duration(milliseconds: 100),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.rectangle,
+                          borderRadius: BorderRadius.circular(10.0),
+                          color: Color(0xE0FFFFFF),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notification_important,
+                              size: 30,
+                              color: Colors.black,
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              'ALERTS',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Colors.grey,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.settings,
+                            size: 30,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'SETTINGS',
+                            style: TextStyle(color: Colors.white, fontSize: 12.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
       ),
     );
   }
