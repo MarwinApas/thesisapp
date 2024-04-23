@@ -100,6 +100,20 @@ class DatabaseHelper {
         return res > 0; // Returns true if at least one row was affected
     }
 
+    Future<bool> updateName(String newFirstName, String newLastName, String userName) async {
+        final Database db = await initDB();
+        var res = await db.update(
+            "users",
+            {
+                'firstName': newFirstName,
+                'lastName': newLastName,
+            },
+            where: 'userName = ?',
+            whereArgs: [userName],
+        );
+        return res > 0; // Returns true if at least one row was affected
+    }
+
     Future<bool> updateUsername(String oldUsername, String newUsername) async {
         final Database db = await initDB();
         var res = await db.update(
@@ -151,18 +165,6 @@ class DatabaseHelper {
     }
 
 
-    Future<bool> updateName(String firstName, String lastName, String userName) async {
-        final Database db = await initDB();
-        var res = await db.update(
-            "users",
-            {
-                'firstName': firstName,
-                'lastName': lastName,
-            },
-            where: 'userName = ?',
-            whereArgs: [userName],
-        );
-        return res > 0; // Returns true if at least one row was affected
-    }
+
 }
 
