@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thesis_app/JsonModels/users.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/main.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -22,9 +23,15 @@ final confirmUserPassword = TextEditingController();
 final userVerificationQuestion = TextEditingController();
 final userVerificationAnswer = TextEditingController();
 
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
 Future<void> registerUser() async {
   // Check if the username already exists in the database
   bool usernameExists = await db.checkUsernameExists(userName.text);
+  QuerySnapshot query = await _firestore
+      .collection('users')
+      .where('userName', isEqualTo: userName.text)
+      .get();
 
   if (usernameExists) {
     // Username already exists, display an error message
@@ -55,10 +62,53 @@ Future<void> registerUser() async {
       userVerificationQuestion: userVerificationQuestion.text,
       userVerificationAnswer: userVerificationAnswer.text,
     );
-    await db.createUser(newUser);
+    try{
+      await _firestore.collection('users').add(newUser.toMap());
+      await db.createUser(newUser);
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Success"),
+            content: Text("Registration successful!"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context, true); // Navigate back with success flag
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+    catch(e){
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text("Registration unsuccessful. Please try again."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    }
     Navigator.pop(context); // Navigate back to the previous screen after registration
   }
 }
+
+
 
   //final formKey = GlobalKey<FormState>();
   bool newPasswordIsVisible = true, confirmPasswordIsVisible = true;

@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
+
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Alerts extends StatefulWidget {
   const Alerts({Key? key});
@@ -11,7 +14,51 @@ class Alerts extends StatefulWidget {
 }
 
 class _AlertsState extends State<Alerts> {
+  DatabaseReference _kioskRef = FirebaseDatabase.instance.reference().child('kiosk'); // Firebase reference for 'kiosk'
   @override
+  void initState() {
+    super.initState();
+    _checkNewKiosk(); // Call the method to check for new kiosks when the Alerts tab is initialized
+  }
+
+  void _checkNewKiosk() async {
+    DataSnapshot snapshot = (await _kioskRef.once()) as DataSnapshot; // Get a snapshot of the 'kiosk' value
+    int currentKiosk = snapshot.value as int; // Assuming 'kiosk' is an integer value in Firebase
+
+    // Check if the current kiosk value is greater than the previous value stored in local storage
+    // You can use shared_preferences or another local storage solution for this
+    int previousKiosk = await _getPreviousKioskValue(); // Implement this method to get the previous kiosk value
+    if (currentKiosk > previousKiosk) {
+      // If a new kiosk has been added, show the notification
+      _showNewKioskNotification(currentKiosk);
+    }
+  }
+
+  Future<int> _getPreviousKioskValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? previousKiosk = prefs.getInt('previousKiosk'); // Get the previous kiosk value from SharedPreferences
+    return previousKiosk ?? 0; // Return 0 if no previous value is found
+  }
+
+  void _showNewKioskNotification(int currentKiosk) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("New Kiosk Added"),
+          content: Text("A new kiosk has been added. Current kiosk count: $currentKiosk"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {

@@ -39,7 +39,7 @@ class TrackerBox extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(14.0),
         child: Container(
-          height: 160,
+          height: 170,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(50.0),
@@ -64,120 +64,79 @@ class TrackerBox extends StatelessWidget {
                   ),
                 ),
               ),
-              Row(
-                children: [
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 30.0, left: 25.0),
-                      child: Text(
-                        'PESO STACK:',
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+              Align(
+                alignment: Alignment.center,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      FutureBuilder<DatabaseEvent>(
+                        future: FirebaseDatabase.instance
+                            .reference()
+                            .child('Denomination')
+                            .once() as Future<DatabaseEvent>?,
+                        builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text("Error: ${snapshot.error}");
+                          } else if (!snapshot.hasData) {
+                            return Text("No data available");
+                          } else {
+                            DataSnapshot dataSnapshot = snapshot.data!.snapshot;
+                            Map<dynamic, dynamic> denominationsData =
+                            dataSnapshot.value as Map<dynamic, dynamic>;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "PESO STACK:",
+                                  style: TextStyle(
+                                    fontSize: 18.0,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  "1000-PESO BILL STACK: ${denominationsData['1000']}",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  "100-PESO BILL STACK: ${denominationsData['100']}",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  "20-PESO COIN STACK: ${denominationsData['20']}",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  "5-PESO COIN STACK: ${denominationsData['5']}",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  "1-PESO COIN STACK: ${denominationsData['1']}",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                        },
                       ),
-                    ),
+                    ],
                   ),
-                  SizedBox(width: screenWidth * 0.20),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 32.0),
-                      child: Text(
-                        'FOREIGN BILL\nSTACK:',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 70, left: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FutureBuilder<DatabaseEvent>(
-                            future: FirebaseDatabase.instance.reference().child('Denomination').once(),
-                            builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              } else if (snapshot.hasError) {
-                                return Text("Error: ${snapshot.error}");
-                              } else if (!snapshot.hasData) {
-                                return Text("No data available");
-                              } else {
-                                DataSnapshot dataSnapshot = snapshot.data!.snapshot;
-                                Map<dynamic, dynamic> denominationsData = dataSnapshot.value as Map<dynamic, dynamic>;
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "1000-PESO BILL STACK: ${denominationsData['1000']}",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    Text(
-                                      "100-PESO BILL STACK: ${denominationsData['100']}",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    Text(
-                                      "20-PESO COIN STACK: ${denominationsData['20']}",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    Text(
-                                      "5-PESO COIN STACK: ${denominationsData['5']}",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    Text(
-                                      "1-PESO COIN STACK: ${denominationsData['1']}",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: screenWidth * 0.3),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 90.0),
-                      child: Text(
-                        '60%',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 36.0,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),

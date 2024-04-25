@@ -18,7 +18,6 @@ class _TrackerState extends State<Tracker> {
   String numberOfKiosks = '0';
 
 
-
   @override
   void initState() {
     super.initState();
@@ -30,7 +29,6 @@ class _TrackerState extends State<Tracker> {
       });
     });
   }
-
   void _updateTrackerBoxes() {
     _trackerBoxes.clear();
     int kiosks = int.tryParse(numberOfKiosks) ?? 0;
@@ -78,10 +76,21 @@ class _TrackerState extends State<Tracker> {
         body: Stack(
           children: [
             Container(
+              height: MediaQuery.of(context).size.height *0.9, // Adjust the multiplier as needed
               child: ListView.builder(
                 itemCount: _trackerBoxes.length,
                 itemBuilder: (context, index) {
-                  return TrackerBox(boxName: _trackerBoxes[index]);
+                  return TrackerBox(
+                    boxName: _trackerBoxes[index],
+                    onDelete: () {
+                      // Define what should happen when onDelete is called
+                      // In this case, you can remove the TrackerBox widget from the list
+                      setState(() {
+                        _trackerBoxes.removeAt(index);
+                      });
+                    },
+                  );
+
                 },
               ),
             ),
@@ -242,7 +251,7 @@ class _TrackerState extends State<Tracker> {
               ),
             ),
             Positioned(
-              bottom: 20,
+              bottom: 30,
               left: 156,
               child: GestureDetector(
                 onTap: () {
