@@ -1,141 +1,226 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class TrackerBox extends StatelessWidget {
   final String boxName;
-
-  const TrackerBox({Key? key, required this.boxName}) : super(key: key);
+  final VoidCallback onDelete;
+  const TrackerBox({Key? key, required this.boxName, required this.onDelete})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    return Padding(
-      padding: const EdgeInsets.all(14.0),
-      child: Container(
-        height: 160,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(50.0), // Set border radius here
-          border: Border.all(
-            color: Color(0xFFD96C00), // Set outline color
-            width: 2, // Set outline width
-          ),
+
+    Future<void> _deleteAndShowSnackBar() async {
+      // Delete the widget
+      onDelete();
+
+      // Decrement 'kiosk' value in Firebase
+      DatabaseReference _kioskRef =
+      FirebaseDatabase.instance.reference().child('kiosk');
+      DataSnapshot snapshot = (await _kioskRef.once()).snapshot;
+      int currentKiosk = snapshot.value as int;
+      if (currentKiosk > 0) {
+        _kioskRef.set(currentKiosk - 1); // Decrement 'kiosk' by 1
+      }
+
+      // Show a SnackBar indicating item deletion
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Tracker deleted'),
         ),
-        child: Stack(
-          children: [
-            Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 0), // Adjust top padding as needed
-                child: Text(
-                  'KIOSK',
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
+      );
+    }
+
+    return Slidable(
+      actionPane: SlidableDrawerActionPane(),
+      actionExtentRatio: 1 / 5,
+      child: Padding(
+        padding: const EdgeInsets.all(14.0),
+        child: Container(
+          height: 160,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(50.0),
+            border: Border.all(
+              color: Color(0xFFD96C00),
+              width: 2,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0, bottom: 0),
+                  child: Text(
+                    'KIOSK',
+                    style: TextStyle(
+                      fontSize: 20.0,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Row(
-              children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 30.0, left: 25.0), // Adjust top padding as needed
-                    child: Text(
-                      'PESO STACK:',
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 30.0, left: 25.0),
+                      child: Text(
+                        'PESO STACK:',
+                        style: TextStyle(
+                          fontSize: 18.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(width: screenWidth * 0.20),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 32.0), // Adjust top padding as needed
-                    child: Text(
-                      'FOREIGN BILL\nSTACK:',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-
+                  SizedBox(width: screenWidth * 0.20),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 32.0),
+                      child: Text(
+                        'FOREIGN BILL\nSTACK:',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 70,left: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "1000-PESO BILL STACK:",
-                          style: TextStyle(
-                            fontSize: 10,
+                ],
+              ),
+              Row(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 70, left: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FutureBuilder<DatabaseEvent>(
+                            future: FirebaseDatabase.instance.reference().child('Denomination').once(),
+                            builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text("Error: ${snapshot.error}");
+                              } else if (!snapshot.hasData) {
+                                return Text("No data available");
+                              } else {
+                                DataSnapshot dataSnapshot = snapshot.data!.snapshot;
+                                Map<dynamic, dynamic> denominationsData = dataSnapshot.value as Map<dynamic, dynamic>;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "1000-PESO BILL STACK: ${denominationsData['1000']}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    Text(
+                                      "100-PESO BILL STACK: ${denominationsData['100']}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    Text(
+                                      "20-PESO COIN STACK: ${denominationsData['20']}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    Text(
+                                      "5-PESO COIN STACK: ${denominationsData['5']}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    Text(
+                                      "1-PESO COIN STACK: ${denominationsData['1']}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                            },
                           ),
-                        ),
-                        Text(
-                          "100-PESO BILL STACK:",
-                          style: TextStyle(
-                            fontSize: 10,
-                          ),
-                        ),
-                        Text(
-                          "20-PESO COIN STACK:",
-                          style: TextStyle(
-                            fontSize: 10,
-                          ),
-                        ),
-                        Text(
-                          "5-PESO COIN STACK:",
-                          style: TextStyle(
-                            fontSize: 10,
-                          ),
-                        ),
-                        Text(
-                          "1-PESO COIN STACK:",
-                          style: TextStyle(
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(width: screenWidth * 0.3),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 90.0), // Adjust top padding as needed
-                    child: Text(
-                      '60%',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 36.0,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-
+                        ],
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  SizedBox(width: screenWidth * 0.3),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 90.0),
+                      child: Text(
+                        '60%',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 36.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
+      actions: [
+        IconSlideAction(
+          caption: 'Delete',
+          color: Colors.red,
+          icon: Icons.delete,
+          onTap: () async {
+            // Show a dialog with "Yes" or "No" options
+            bool confirmDelete = await showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Confirm Deletion'),
+                  content: Text('Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false); // Return false if "No" is pressed
+                      },
+                      child: Text('No'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(true); // Return true if "Yes" is pressed
+                      },
+                      child: Text('Yes'),
+                    ),
+                  ],
+                );
+              },
+            );
+
+            // If "Yes" is pressed, proceed with deletion
+            if (confirmDelete == true) {
+              await _deleteAndShowSnackBar();
+            }
+          },
+        ),
+      ],
     );
   }
 }
