@@ -93,25 +93,19 @@ class _TrackerBoxState extends State<TrackerBox> {
                               future: FirebaseDatabase.instance
                                   .ref()
                                   .child('Denomination')
-                                  .once() as Future<DatabaseEvent>?,
-                              builder: (context,
-                                  AsyncSnapshot<DatabaseEvent> snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
+                                  .once(),
+                              builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
                                   return CircularProgressIndicator();
                                 } else if (snapshot.hasError) {
                                   return Text("Error: ${snapshot.error}");
                                 } else if (!snapshot.hasData) {
                                   return Text("No data available");
                                 } else {
-                                  DataSnapshot dataSnapshot =
-                                      snapshot.data!.snapshot;
-                                  Map<dynamic, dynamic> denominationsData =
-                                  dataSnapshot.value as Map<dynamic,
-                                      dynamic>;
+                                  DataSnapshot dataSnapshot = snapshot.data!.snapshot;
+                                  Map<dynamic, dynamic> denominationsData = dataSnapshot.value as Map<dynamic, dynamic>;
                                   return Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
                                       Text(
                                         "PESO STACK:",
@@ -157,6 +151,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 }
                               },
                             ),
+
                           ],
                         ),
                       ),
@@ -209,4 +204,3 @@ class _TrackerBoxState extends State<TrackerBox> {
     );
   }
 }
-

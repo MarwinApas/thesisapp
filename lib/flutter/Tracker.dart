@@ -1,99 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thesis_app/WelcomePage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/trackerBox.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:thesis_app/newTrackerBox.dart';
+import 'package:thesis_app/SQLite/database_helper.dart';
 
 class Tracker extends StatefulWidget {
-  final String? userName; // Add this line to declare the userName parameter
+  final String? userName;
+
   const Tracker({Key? key, this.userName}) : super(key: key);
+
   @override
   _TrackerState createState() => _TrackerState();
 }
 
 class _TrackerState extends State<Tracker> {
-  final List _trackerBoxes = [];
+  List<String> _trackerBoxes = [];
   String numberOfKiosks = '0';
-
-
 
   @override
   void initState() {
     super.initState();
-    DatabaseReference _kioskRef = FirebaseDatabase.instance.ref().child('kiosk');
+    DatabaseReference _kioskRef = FirebaseDatabase.instance.reference().child('kiosk');
     _kioskRef.onValue.listen((event) {
       setState(() {
         numberOfKiosks = event.snapshot.value.toString();
-        _updatedefaultTrackerBoxes();
+        if (_trackerBoxes.isEmpty) {
+          _updateTrackerBoxes(); // Update the list only if it's empty
+        }
       });
     });
   }
-  void _updatedefaultTrackerBoxes() {
+
+  void _updateTrackerBoxes() {
     _trackerBoxes.clear();
     int kiosks = int.tryParse(numberOfKiosks) ?? 0;
     for (int i = 0; i < kiosks; i++) {
-      _trackerBoxes.add('Thesis_kiosk ${i + 1}');
+      _trackerBoxes.add('kiosk ${i + 1}');
     }
-  }
-  Future<String?> getUserKeyByUsername(String? userName) async {
-    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
-    DataSnapshot dataSnapshot =
-        (await ownersRef.orderByChild('userName').equalTo(userName).once()).snapshot;
-    String? userKey;
-
-    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
-    if (values != null) {
-      userKey = values.keys.first.toString();
-    }
-
-    return userKey;
-  }
-  void _saveKioskName(String kioskName) async {
-    String? userKey = await getUserKeyByUsername(widget.userName);
-    if (userKey != null) {
-      DatabaseReference kioskRef = FirebaseDatabase.instance
-          .ref()
-          .child('owners_collection')
-          .child(userKey)
-          .child('kiosks');
-      kioskRef.push().set({'kioskName': kioskName});
-    }
-  }
-  void _showAddKioskDialog() {
-    String kioskName = '';
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add Kiosk'),
-          content: TextField(
-            onChanged: (value) {
-              kioskName = value;
-            },
-            decoration: InputDecoration(hintText: 'Enter Kiosk Name'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Save kioskName under owners_collection/userKey
-                _saveKioskName(kioskName);
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Add Kiosk'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -112,7 +60,7 @@ class _TrackerState extends State<Tracker> {
           iconTheme: IconThemeData(color: Colors.white),
           leading: IconButton(
             icon: Icon(
-              Icons.arrow_back, // You can replace this with your custom back icon
+              Icons.arrow_back,
               color: Colors.white,
             ),
             onPressed: () {
@@ -123,7 +71,7 @@ class _TrackerState extends State<Tracker> {
             },
           ),
           title: Text(
-            "TRACKER",
+            'TRACKER',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -135,29 +83,28 @@ class _TrackerState extends State<Tracker> {
         body: Stack(
           children: [
             Container(
-              height: MediaQuery.of(context).size.height *0.9, // Adjust the multiplier as needed
-              child: ListView.builder(
-                itemCount: _trackerBoxes.length,
-                itemBuilder: (context, index) {
-                  return TrackerBox(
-                    boxName: _trackerBoxes[index],
-                    onDelete: () {
-                      setState(() {
-                        _trackerBoxes.removeAt(index);
-                      });
-                    },
-                  );
-
-                },
-              ),
+            height: MediaQuery.of(context).size.height * 0.9,
+            child: ListView.builder(
+              itemCount: _trackerBoxes.length,
+              itemBuilder: (context, index) {
+                return TrackerBox(
+                  boxName: _trackerBoxes[index], // Use kiosk name from the list
+                  onDelete: () {
+                    setState(() {
+                      _trackerBoxes.removeAt(index);
+                    });
+                  },
+                );
+              },
             ),
+          ),
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Container(
-                height: 90, // Adjust the height as needed
-                color: Color(0xff02022d), // Adjust the color as needed
+                height: 90,
+                color: Color(0xff02022d),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -311,11 +258,86 @@ class _TrackerState extends State<Tracker> {
               bottom: 30,
               left: 156,
               child: GestureDetector(
-                onTap: () {
-                  // Increment 'kiosk' value in Firebase
-                  DatabaseReference _kioskRef = FirebaseDatabase.instance.ref().child('kiosk');
-                  int currentKiosk = int.tryParse(numberOfKiosks) ?? 0;
-                  _kioskRef.set(currentKiosk + 1); // Increment 'kiosk' by 1
+                onTap: () async {
+                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                  String? userName = prefs.getString('userName');
+                  String? userKey = await getUserKeyByUsername(userName!);
+                  if (userKey != null && userKey.isNotEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        String kioskName = '';
+                        int denomination1000 = 0;
+                        int denomination100 = 0;
+                        int denomination20 = 0;
+                        int denomination5 = 0;
+                        int denomination1 = 0;
+
+                        return AlertDialog(
+                          title: Text("ADD NEW KIOSK"),
+                          content: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextField(
+                                  decoration: InputDecoration(labelText: "Kiosk Name"),
+                                  onChanged: (value) {
+                                    kioskName = value.trim();
+                                  },
+                                ),
+                                SizedBox(height: 10),
+                                TextButton(
+                                  onPressed: () async {
+                                    if (kioskName.isNotEmpty) {
+                                      await addKiosk(kioskName, userKey);
+                                      Navigator.pop(context);
+                                    } else {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: Text("Error"),
+                                            content: Text("Please enter a valid kiosk name."),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                },
+                                                child: Text("OK"),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    }
+                                  },
+                                  child: Text("Add Kiosk"),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Error"),
+                          content: Text("User key not found or empty."),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text("OK"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
                 },
                 child: Container(
                   width: 80,
@@ -361,5 +383,43 @@ class _TrackerState extends State<Tracker> {
         ),
       ),
     );
+  }
+
+  Future<String?> getUserKeyByUsername(String userName) async {
+    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
+    DataSnapshot dataSnapshot = (await ownersRef.orderByChild('userName').equalTo(userName).once()).snapshot;
+    String? userKey;
+
+    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
+    if (values != null) {
+      userKey = values.keys.first.toString();
+    }
+
+    return userKey;
+  }
+
+  Future<void> addKiosk(String kioskName, String userKey) async {
+    DatabaseReference kioskRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userKey)
+        .push();
+    await kioskRef.set({
+      'kioskName': kioskName,
+    });
+
+    setState(() {
+      _trackerBoxes.add(kioskName); // Update the list with the new kiosk name
+    });
+  }
+
+  Future<void> addNewKioskInfo(String userKey, String kioskKey) async {
+    DatabaseReference kioskRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userKey)
+        .child(kioskKey)
+        .push();
+
   }
 }
