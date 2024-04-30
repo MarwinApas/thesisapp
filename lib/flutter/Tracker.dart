@@ -77,7 +77,7 @@ class _TrackerState extends State<Tracker> {
                             TextButton(
                               onPressed: () async {
                                 Navigator.of(context).pop(true);
-                                await _deleteKiosk(widget.userName!, _trackerBoxes[index]);
+                                //await _deleteKiosk(widget.userName!,kioskName);
                               },
                               child: Text('Yes'),
                             ),
@@ -281,6 +281,7 @@ class _TrackerState extends State<Tracker> {
                                 onPressed: () async {
                                   if (kioskName.isNotEmpty) {
                                     await addKiosk(kioskName, userName);
+                                    await addDenomination(kioskName,userName);
                                     Navigator.pop(context);
                                   } else {
                                     showDialog(
@@ -432,55 +433,53 @@ class _TrackerState extends State<Tracker> {
         .ref()
         .child('owners_collection')
         .child(userName)
-        .child('kiosks')
-        .child(kioskName)
-        .push();
-    await kioskRef.set();
-
+        .child('kiosks');
+    await kioskRef.set({kioskName: ""});
 
     setState(() {
       _trackerBoxes.add(kioskName); // Update the list with the new kiosk name
     });
   }
 
+  Future<void> addDenomination(String kioskName, String userName) async {
+    DatabaseReference kioskRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName)
+        .child('denominations');
+    await kioskRef.set({
+      '1000': 0,
+      '100': 0,
+      '20': 0,
+      '5': 0,
+      '1': 0
+    });
+  }
+
   Future<void> _deleteKiosk(String userName, String kioskName) async {
-    String? userKey = await getUserKeyByUsername(userName);
-    if (userKey != null) {
-      DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
+    if (kioskName != null) {
+      DatabaseReference kiosksRef = FirebaseDatabase.instance.ref()
+          .child('owners_collection')
+          .child(userName)
+          .child('kiosks')
+          .child(kioskName);
+      kiosksRef.remove();
+      // Remove the kiosk name from the _trackerBoxes list
+      setState(() {
+        _trackerBoxes.remove(kioskName);
+      });
 
-      // Query the kiosks reference for the specific kiosk to delete
-      Query kioskQuery = kiosksRef.orderByChild('kioskName').equalTo(kioskName).limitToFirst(1);
-      DataSnapshot snapshot = (await kioskQuery.once()) as DataSnapshot;
-      Map<dynamic, dynamic>? kioskMap = snapshot.value as Map<dynamic, dynamic>?;
-
-      if (kioskMap != null) {
-        String kioskKey = kioskMap.keys.first.toString();
-        await kiosksRef.child(kioskKey).remove();
-
-        // Remove the kiosk name from the _trackerBoxes list
-        setState(() {
-          _trackerBoxes.remove(kioskName);
-        });
-
-        // Show a SnackBar indicating item deletion
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Kiosk deleted'),
-          ),
-        );
-      } else {
-        // Show a SnackBar indicating that the kiosk was not found
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Kiosk not found'),
-          ),
-        );
-      }
-    } else {
-      // Show a SnackBar indicating that the user key was not found
+      // Show a SnackBar indicating item deletion
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('User key not found'),
+          content: Text('Kiosk deleted'),
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kiosk not found'),
         ),
       );
     }
