@@ -259,8 +259,7 @@ class _TrackerState extends State<Tracker> {
               onTap: () async {
                 SharedPreferences prefs = await SharedPreferences.getInstance();
                 String? userName = prefs.getString('userName');
-                String? userKey = await getUserKeyByUsername(userName!);
-                if (userKey != null && userKey.isNotEmpty) {
+                if (userName != null && userName.isNotEmpty) {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -281,7 +280,7 @@ class _TrackerState extends State<Tracker> {
                               TextButton(
                                 onPressed: () async {
                                   if (kioskName.isNotEmpty) {
-                                    await addKiosk(kioskName, userKey);
+                                    await addKiosk(kioskName, userName);
                                     Navigator.pop(context);
                                   } else {
                                     showDialog(
@@ -428,15 +427,15 @@ class _TrackerState extends State<Tracker> {
     return userKey;
   }
 
-  Future<void> addKiosk(String kioskName, String userKey) async {
+  Future<void> addKiosk(String kioskName, String userName) async {
     DatabaseReference kioskRef = FirebaseDatabase.instance
         .ref()
         .child('owners_collection')
-        .child(userKey)
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName)
         .push();
-    await kioskRef.set({
-      'kioskName': kioskName,
-    });
+    await kioskRef.set();
 
 
     setState(() {
