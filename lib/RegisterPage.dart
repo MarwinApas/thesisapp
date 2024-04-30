@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:thesis_app/JsonModels/users.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/main.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -14,84 +14,53 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   String? selectedQuestion;
-final db = DatabaseHelper();
-final firstName = TextEditingController();
-final lastName = TextEditingController();
-final userName = TextEditingController();
-final userPassword = TextEditingController();
-final confirmUserPassword = TextEditingController();
-final userVerificationQuestion = TextEditingController();
-final userVerificationAnswer = TextEditingController();
+  final db = DatabaseHelper();
+  final firstName = TextEditingController();
+  final lastName = TextEditingController();
+  final userName = TextEditingController();
+  final userPassword = TextEditingController();
+  final confirmUserPassword = TextEditingController();
+  final userVerificationQuestion = TextEditingController();
+  final userVerificationAnswer = TextEditingController();
+  final userKey = TextEditingController();
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  //for firestore
+  /*Future<void> addUserDetails(String firstName, String lastName) async {
+    await FirebaseFirestore.instance.collection('owners_collection').add({
+      'firstName': firstName,
+      'lastName': lastName,
+    });
+  }*/
 
-Future<void> registerUser() async {
-  // Check if the username already exists in the database
-  bool usernameExists = await db.checkUsernameExists(userName.text);
-  QuerySnapshot query = await _firestore
-      .collection('users')
-      .where('userName', isEqualTo: userName.text)
-      .get();
 
-  if (usernameExists) {
-    // Username already exists, display an error message
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Error"),
-          content: Text("Username already exists. Please type a different username."),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
-  } else {
-    // Username is unique, proceed with user registration
-    final newUser = Users(
-      firstName: firstName.text,
-      lastName: lastName.text,
-      userName: userName.text,
-      userPassword: userPassword.text,
-      userVerificationQuestion: userVerificationQuestion.text,
-      userVerificationAnswer: userVerificationAnswer.text,
-    );
-    try{
-      await _firestore.collection('users').add(newUser.toMap());
-      await db.createUser(newUser);
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Success"),
-            content: Text("Registration successful!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close the dialog
-                  Navigator.pop(context, true); // Navigate back with success flag
-                },
-                child: Text("OK"),
-              ),
-            ],
-          );
-        },
-      );
-    }
-    catch(e){
+  //for realtime database
+  Future<String> addUserDetails(String userName,String firstName, String lastName) async {
+    DatabaseReference reference = FirebaseDatabase.instance.ref().child('owners_collection');
+    String userKey = reference.push().key!; // Generate unique key
+    await reference.child(userKey).set({
+      'userName': userName,
+      'firstName': firstName,
+      'lastName': lastName,
+    });
+    return userKey; // Return the generated key
+  }
+
+
+
+  Future<void> registerUser() async {
+    // Check if the username already exists in the database
+
+    bool usernameExists = await db.checkUsernameExists(userName.text);
+
+    if (usernameExists) {
+      // Username already exists, display an error message
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text("Error"),
-            content: Text("Registration unsuccessful. Please try again."),
+            content: Text("Username already exists. Please type a different username."),
             actions: [
               TextButton(
                 onPressed: () {
@@ -103,12 +72,64 @@ Future<void> registerUser() async {
           );
         },
       );
+    } else {
+      // Username is unique, proceed with user registration
+      final newUser = Users(
+        firstName: firstName.text,
+        lastName: lastName.text,
+        userName: userName.text,
+        userPassword: userPassword.text,
+        userVerificationQuestion: userVerificationQuestion.text,
+        userVerificationAnswer: userVerificationAnswer.text,
+      );
+
+      try {
+        await db.createUser(newUser);
+        await addUserDetails(userName.text.trim(), firstName.text.trim(), lastName.text.trim());
+        //await saveUserKeyToSharedPreferences(userKey);
+        //print("NEW USER KEY: $userKey");4
+        // Display success dialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Success"),
+              content: Text("Registration successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                    Navigator.pop(context, true); // Navigate back with success flag
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      } catch (e) {
+
+        // Display error dialog for unsuccessful registration
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Error"),
+              content: Text("Registration unsuccessful. Please try again."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      }
     }
-    Navigator.pop(context); // Navigate back to the previous screen after registration
   }
-}
-
-
 
   //final formKey = GlobalKey<FormState>();
   bool newPasswordIsVisible = true, confirmPasswordIsVisible = true;
@@ -366,17 +387,17 @@ Future<void> registerUser() async {
                                   },
                                 );
                               } else {
-                                // Check if the username already exists in the database
-                                bool usernameExists = await db.checkUsernameExists(userName.text);
-
-                                if (usernameExists) {
-                                  // Username already exists, display an error message
+                                try {
+                                  await registerUser(); // Call the registerUser function
+                                  // User registration successful, navigate back or perform any other action
+                                } catch (e) {
+                                  // Display error dialog for unsuccessful registration
                                   showDialog(
                                     context: context,
                                     builder: (BuildContext context) {
                                       return AlertDialog(
                                         title: Text("Error"),
-                                        content: Text("Username already exists. Please type a different username."),
+                                        content: Text("Registration unsuccessful. Please try again."),
                                         actions: [
                                           TextButton(
                                             onPressed: () {
@@ -388,58 +409,6 @@ Future<void> registerUser() async {
                                       );
                                     },
                                   );
-                                } else {
-                                  // Username is unique, proceed with user registration
-                                  final newUser = Users(
-                                    firstName: firstName.text,
-                                    lastName: lastName.text,
-                                    userName: userName.text,
-                                    userPassword: userPassword.text,
-                                    userVerificationQuestion: userVerificationQuestion.text,
-                                    userVerificationAnswer: userVerificationAnswer.text,
-                                  );
-                                  int userId = await db.createUser(newUser);
-                                  bool registrationSuccess = userId != -1; // Check if the user ID is valid
-                                  if (registrationSuccess) {
-                                    // Display success dialog
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text("Success"),
-                                          content: Text("Registration successful!"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context); // Close the dialog
-                                                Navigator.pop(context, true); // Navigate back with success flag
-                                              },
-                                              child: Text("OK"),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else {
-                                    // Display error dialog for unsuccessful registration
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text("Error"),
-                                          content: Text("Registration unsuccessful. Please try again."),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context); // Close the dialog
-                                              },
-                                              child: Text("OK"),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  }
                                 }
                               }
                             },
@@ -468,6 +437,7 @@ Future<void> registerUser() async {
                               minimumSize: Size(190, 50),
                             ),
                           ),
+
 
                         ],
                       ),

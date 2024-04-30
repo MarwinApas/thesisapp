@@ -18,23 +18,82 @@ class _TrackerState extends State<Tracker> {
   String numberOfKiosks = '0';
 
 
+
   @override
   void initState() {
     super.initState();
-    DatabaseReference _kioskRef = FirebaseDatabase.instance.reference().child('kiosk');
+    DatabaseReference _kioskRef = FirebaseDatabase.instance.ref().child('kiosk');
     _kioskRef.onValue.listen((event) {
       setState(() {
         numberOfKiosks = event.snapshot.value.toString();
-        _updateTrackerBoxes();
+        _updatedefaultTrackerBoxes();
       });
     });
   }
-  void _updateTrackerBoxes() {
+  void _updatedefaultTrackerBoxes() {
     _trackerBoxes.clear();
     int kiosks = int.tryParse(numberOfKiosks) ?? 0;
     for (int i = 0; i < kiosks; i++) {
-      _trackerBoxes.add('Kiosk ${i + 1}');
+      _trackerBoxes.add('Thesis_kiosk ${i + 1}');
     }
+  }
+  Future<String?> getUserKeyByUsername(String? userName) async {
+    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
+    DataSnapshot dataSnapshot =
+        (await ownersRef.orderByChild('userName').equalTo(userName).once()).snapshot;
+    String? userKey;
+
+    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
+    if (values != null) {
+      userKey = values.keys.first.toString();
+    }
+
+    return userKey;
+  }
+  void _saveKioskName(String kioskName) async {
+    String? userKey = await getUserKeyByUsername(widget.userName);
+    if (userKey != null) {
+      DatabaseReference kioskRef = FirebaseDatabase.instance
+          .ref()
+          .child('owners_collection')
+          .child(userKey)
+          .child('kiosks');
+      kioskRef.push().set({'kioskName': kioskName});
+    }
+  }
+  void _showAddKioskDialog() {
+    String kioskName = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add Kiosk'),
+          content: TextField(
+            onChanged: (value) {
+              kioskName = value;
+            },
+            decoration: InputDecoration(hintText: 'Enter Kiosk Name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Save kioskName under owners_collection/userKey
+                _saveKioskName(kioskName);
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Add Kiosk'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -83,8 +142,6 @@ class _TrackerState extends State<Tracker> {
                   return TrackerBox(
                     boxName: _trackerBoxes[index],
                     onDelete: () {
-                      // Define what should happen when onDelete is called
-                      // In this case, you can remove the TrackerBox widget from the list
                       setState(() {
                         _trackerBoxes.removeAt(index);
                       });
@@ -256,7 +313,7 @@ class _TrackerState extends State<Tracker> {
               child: GestureDetector(
                 onTap: () {
                   // Increment 'kiosk' value in Firebase
-                  DatabaseReference _kioskRef = FirebaseDatabase.instance.reference().child('kiosk');
+                  DatabaseReference _kioskRef = FirebaseDatabase.instance.ref().child('kiosk');
                   int currentKiosk = int.tryParse(numberOfKiosks) ?? 0;
                   _kioskRef.set(currentKiosk + 1); // Increment 'kiosk' by 1
                 },
