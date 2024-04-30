@@ -16,7 +16,6 @@ class TrackerBox extends StatefulWidget {
 
 class _TrackerBoxState extends State<TrackerBox> {
   bool _expanded = false;
-  late String userKey; // Define userKey variable
   late String userName; // Define userKey variable
 
   @override
@@ -30,20 +29,6 @@ class _TrackerBoxState extends State<TrackerBox> {
     });
   }
 
-  Future<String?> getUserKeyByUsername(String userName) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? storedUserName = prefs.getString('userName'); // Rename the variable here
-    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
-    DataSnapshot dataSnapshot = (await ownersRef.orderByChild('userName').equalTo(storedUserName).once()).snapshot;
-    String? userKey;
-
-    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
-    if (values != null) {
-      userKey = values.keys.first.toString();
-    }
-
-    return userKey;
-  }
 
   Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -54,8 +39,11 @@ class _TrackerBoxState extends State<TrackerBox> {
     // Delete the widget
     widget.onDelete();
     // Remove the corresponding kioskName from the database
-    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
-    await kiosksRef.child(kioskName).remove();
+    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName);
+    await kiosksRef.remove();
   }
 
   @override
@@ -115,7 +103,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                   .child('owners_collection')
                                   .child(userName)
                                   .child('kiosks')
-                                  .child('hehe')
+                                  .child(widget.boxName)
                                   .child('denominations')
                                   .once(),
                               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
