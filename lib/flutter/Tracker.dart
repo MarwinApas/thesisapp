@@ -20,369 +20,399 @@ class Tracker extends StatefulWidget {
 
 class _TrackerState extends State<Tracker> {
   List<String> _trackerBoxes = [];
-  String numberOfKiosks = '0';
 
   @override
-  void initState() {
-    super.initState();
-    DatabaseReference _kioskRef = FirebaseDatabase.instance.reference().child('kiosk');
-    _kioskRef.onValue.listen((event) {
-      setState(() {
-        numberOfKiosks = event.snapshot.value.toString();
-        if (_trackerBoxes.isEmpty) {
-          _updateTrackerBoxes(); // Update the list only if it's empty
-        }
-      });
-    });
-  }
-
-  void _updateTrackerBoxes() {
-    _trackerBoxes.clear();
-    int kiosks = int.tryParse(numberOfKiosks) ?? 0;
-    for (int i = 0; i < kiosks; i++) {
-      _trackerBoxes.add('kiosk ${i + 1}');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
-        );
-        return false;
-      },
-      child: Scaffold(
-        backgroundColor: Color(0xE0FFFFFF),
-        appBar: AppBar(
-          iconTheme: IconThemeData(color: Colors.white),
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
-              );
-            },
+    return Scaffold(
+      backgroundColor: Color(0xE0FFFFFF),
+      appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
           ),
-          title: Text(
-            'TRACKER',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          centerTitle: true,
-          backgroundColor: Color(0xff02022d),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
+            );
+          },
         ),
-        body: Stack(
-          children: [
-            Container(
+        title: Text(
+          'TRACKER',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Color(0xff02022d),
+      ),
+      body: Stack(
+        children: [
+          Container(
             height: MediaQuery.of(context).size.height * 0.9,
             child: ListView.builder(
               itemCount: _trackerBoxes.length,
               itemBuilder: (context, index) {
                 return TrackerBox(
                   boxName: _trackerBoxes[index], // Use kiosk name from the list
-                  onDelete: () {
-                    setState(() {
-                      _trackerBoxes.removeAt(index);
-                    });
+                  onDelete: () async {
+                    bool confirmDelete = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Confirm Deletion'),
+                          content: Text('Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop(false);
+                              },
+                              child: Text('No'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.of(context).pop(true);
+                                await _deleteKiosk(widget.userName!, _trackerBoxes[index]);
+                              },
+                              child: Text('Yes'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    if (confirmDelete == true) {
+                      setState(() {
+                        _trackerBoxes.removeAt(index);
+                      });
+                    }
                   },
                 );
               },
             ),
           ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 90,
-                color: Color(0xff02022d),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => WelcomePage()),
-                        );
-                      },
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(10.0),
-                          color: Color(0xE0FFFFFF),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.home,
-                              size: 30,
-                              color: Colors.black,
-                            ),
-                            SizedBox(height: 5),
-                            Text(
-                              'HOME',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 90,
+              color: Color(0xff02022d),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
+                      );
+                    },
+                    child: Container(
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
                         shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(10.0),
-                        color: Colors.grey,
+                        color: Color(0xE0FFFFFF),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.radar_sharp,
+                            Icons.home,
                             size: 30,
-                            color: Colors.white,
+                            color: Colors.black,
                           ),
                           SizedBox(height: 5),
                           Text(
-                            'TRACKER',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5,
-                            ),
+                            'HOME',
+                            style: TextStyle(color: Colors.black),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(width: 50),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) => Alerts(),
-                            transitionsBuilder: (_, animation, __, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            transitionDuration: Duration(milliseconds: 100),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(10.0),
-                          color: Color(0xE0FFFFFF),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.notification_important,
-                              size: 30,
-                              color: Colors.black,
-                            ),
-                            SizedBox(height: 5),
-                            Text(
-                              'ALERTS',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) => Settings(userName: widget.userName),
-                            transitionsBuilder: (_, animation, __, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            transitionDuration: Duration(milliseconds: 100),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.circular(10.0),
-                          color: Color(0xE0FFFFFF),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.settings,
-                              size: 30,
-                              color: Colors.black,
-                            ),
-                            SizedBox(height: 5),
-                            Text(
-                              'SETTINGS',
-                              style: TextStyle(color: Colors.black, fontSize: 12.5),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 30,
-              left: 156,
-              child: GestureDetector(
-                onTap: () async {
-                  SharedPreferences prefs = await SharedPreferences.getInstance();
-                  String? userName = prefs.getString('userName');
-                  String? userKey = await getUserKeyByUsername(userName!);
-                  if (userKey != null && userKey.isNotEmpty) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        String kioskName = '';
-                        int denomination1000 = 0;
-                        int denomination100 = 0;
-                        int denomination20 = 0;
-                        int denomination5 = 0;
-                        int denomination1 = 0;
-
-                        return AlertDialog(
-                          title: Text("ADD NEW KIOSK"),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(labelText: "Kiosk Name"),
-                                  onChanged: (value) {
-                                    kioskName = value.trim();
-                                  },
-                                ),
-                                SizedBox(height: 10),
-                                TextButton(
-                                  onPressed: () async {
-                                    if (kioskName.isNotEmpty) {
-                                      await addKiosk(kioskName, userKey);
-                                      Navigator.pop(context);
-                                    } else {
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: Text("Error"),
-                                            content: Text("Please enter a valid kiosk name."),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: Text("OK"),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    }
-                                  },
-                                  child: Text("Add Kiosk"),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text("Error"),
-                          content: Text("User key not found or empty."),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text("OK"),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  }
-                },
-                child: Container(
-                  width: 80,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black,
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 3,
-                    ),
                   ),
-                  child: Center(
-                    child: Container(
-                      width: 70,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black,
-                        border: Border.all(
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(10.0),
+                      color: Colors.grey,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.radar_sharp,
+                          size: 30,
                           color: Colors.white,
-                          width: 5,
                         ),
+                        SizedBox(height: 5),
+                        Text(
+                          'TRACKER',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 50),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => Alerts(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 100),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Color(0xE0FFFFFF),
                       ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add,
-                              size: 50,
-                              color: Colors.white,
-                            ),
-                          ],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notification_important,
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'ALERTS',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => Settings(userName: widget.userName),
+                          transitionsBuilder: (_, animation, __, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 100),
                         ),
+                      );
+                    },
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(10.0),
+
+                        color: Color(0xE0FFFFFF),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.settings,
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'SETTINGS',
+                            style: TextStyle(color: Colors.black, fontSize: 12.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 156,
+            child: GestureDetector(
+              onTap: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                String? userName = prefs.getString('userName');
+                String? userKey = await getUserKeyByUsername(userName!);
+                if (userKey != null && userKey.isNotEmpty) {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      String kioskName = '';
+                      return AlertDialog(
+                        title: Text("ADD NEW KIOSK"),
+                        content: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                decoration: InputDecoration(labelText: "Kiosk Name"),
+                                onChanged: (value) {
+                                  kioskName = value.trim();
+                                },
+                              ),
+                              SizedBox(height: 10),
+                              TextButton(
+                                onPressed: () async {
+                                  if (kioskName.isNotEmpty) {
+                                    await addKiosk(kioskName, userKey);
+                                    Navigator.pop(context);
+                                  } else {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text("Error"),
+                                          content: Text("Please enter a valid kiosk name."),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text("OK"),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  }
+                                },
+                                child: Text("Add Kiosk"),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Error"),
+                        content: Text("User key not found or empty."),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text("OK"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              },
+              child: Container(
+                width: 80,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black,
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 3,
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 70,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 5,
+                      ),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+
+//METHODS
+  void initState() {
+    super.initState();
+    _updateTrackerBoxes();
+  }
+
+  void _updateTrackerBoxes() async {
+    String? userKey = await getUserKeyByUsername(widget.userName!);
+    if (userKey != null) {
+      List<String> kioskNames = await getKioskNamesFromUser(userKey);
+      setState(() {
+        _trackerBoxes = kioskNames;
+      });
+    }
+  }
+
+  Future<List<String>> getKioskNamesFromUser(String userKey) async {
+    List<String> kioskNames = [];
+    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
+
+    try {
+      DataSnapshot snapshot = (await kiosksRef.once()) as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+        kioskMap.forEach((key, value) {
+          if (value is Map && value.containsKey('kioskName')) {
+            kioskNames.add(value['kioskName']);
+          }
+        });
+      }
+    } catch (e) {
+      print('Error fetching kiosk names: $e');
+      // Handle the error as needed
+    }
+
+    return kioskNames;
   }
 
   Future<String?> getUserKeyByUsername(String userName) async {
@@ -392,7 +422,7 @@ class _TrackerState extends State<Tracker> {
 
     Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
     if (values != null) {
-      userKey = values.keys.first.toString();
+    userKey = values.keys.first.toString();
     }
 
     return userKey;
@@ -408,18 +438,54 @@ class _TrackerState extends State<Tracker> {
       'kioskName': kioskName,
     });
 
+
     setState(() {
       _trackerBoxes.add(kioskName); // Update the list with the new kiosk name
     });
   }
 
-  Future<void> addNewKioskInfo(String userKey, String kioskKey) async {
-    DatabaseReference kioskRef = FirebaseDatabase.instance
-        .ref()
-        .child('owners_collection')
-        .child(userKey)
-        .child(kioskKey)
-        .push();
+  Future<void> _deleteKiosk(String userName, String kioskName) async {
+    String? userKey = await getUserKeyByUsername(userName);
+    if (userKey != null) {
+      DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
 
+      // Query the kiosks reference for the specific kiosk to delete
+      Query kioskQuery = kiosksRef.orderByChild('kioskName').equalTo(kioskName).limitToFirst(1);
+      DataSnapshot snapshot = (await kioskQuery.once()) as DataSnapshot;
+      Map<dynamic, dynamic>? kioskMap = snapshot.value as Map<dynamic, dynamic>?;
+
+      if (kioskMap != null) {
+        String kioskKey = kioskMap.keys.first.toString();
+        await kiosksRef.child(kioskKey).remove();
+
+        // Remove the kiosk name from the _trackerBoxes list
+        setState(() {
+          _trackerBoxes.remove(kioskName);
+        });
+
+        // Show a SnackBar indicating item deletion
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kiosk deleted'),
+          ),
+        );
+      } else {
+        // Show a SnackBar indicating that the kiosk was not found
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kiosk not found'),
+          ),
+        );
+      }
+    } else {
+      // Show a SnackBar indicating that the user key was not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('User key not found'),
+        ),
+      );
+    }
   }
+
+
 }

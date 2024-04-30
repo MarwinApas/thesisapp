@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TrackerBox extends StatefulWidget {
   final String boxName;
@@ -15,32 +16,44 @@ class TrackerBox extends StatefulWidget {
 
 class _TrackerBoxState extends State<TrackerBox> {
   bool _expanded = false;
+  late String userKey; // Define userKey variable
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch userKey based on username when the widget is initialized
+    getUserKeyByUsername(widget.boxName).then((key) {
+      setState(() {
+        userKey = key ?? ''; // Assign the fetched userKey or an empty string if null
+      });
+    });
+  }
+
+  Future<String?> getUserKeyByUsername(String userName) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? storedUserName = prefs.getString('userName'); // Rename the variable here
+    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
+    DataSnapshot dataSnapshot = (await ownersRef.orderByChild('userName').equalTo(storedUserName).once()).snapshot;
+    String? userKey;
+
+    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
+    if (values != null) {
+      userKey = values.keys.first.toString();
+    }
+
+    return userKey;
+  }
+
+  Future<void> _deleteAndShowSnackBar(String kioskName) async {
+    // Delete the widget
+    widget.onDelete();
+    // Remove the corresponding kioskName from the database
+    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
+    await kiosksRef.child(kioskName).remove();
+  }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    Future<void> _deleteAndShowSnackBar() async {
-      // Delete the widget
-      widget.onDelete();
-
-      // Decrement 'kiosk' value in Firebase
-      DatabaseReference _kioskRef =
-      FirebaseDatabase.instance.reference().child('kiosk');
-      DataSnapshot snapshot = (await _kioskRef.once()).snapshot;
-      int currentKiosk = snapshot.value as int;
-      if (currentKiosk > 0) {
-        _kioskRef.set(currentKiosk - 1); // Decrement 'kiosk' by 1
-      }
-
-      // Show a SnackBar indicating item deletion
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Tracker deleted'),
-        ),
-      );
-    }
-
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -151,7 +164,6 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 }
                               },
                             ),
-
                           ],
                         ),
                       ),
@@ -166,36 +178,8 @@ class _TrackerBoxState extends State<TrackerBox> {
               color: Colors.red,
               icon: Icons.delete,
               onTap: () async {
-                // Show delete confirmation dialog and delete if confirmed
-                bool confirmDelete = await showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Confirm Deletion'),
-                      content: Text(
-                          'Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(false); // Return false if "No" is pressed
-                          },
-                          child: Text('No'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(true); // Return true if "Yes" is pressed
-                          },
-                          child: Text('Yes'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-
-                // If "Yes" is pressed, proceed with deletion
-                if (confirmDelete == true) {
-                  await _deleteAndShowSnackBar();
-                }
+                // Directly delete without confirmation dialog
+                await _deleteAndShowSnackBar(widget.boxName); // Pass boxName here
               },
             ),
           ],
