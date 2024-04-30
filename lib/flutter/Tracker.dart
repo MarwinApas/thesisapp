@@ -380,17 +380,25 @@ class _TrackerState extends State<Tracker> {
 
 
 //METHODS
+
   @override
   void initState() {
     super.initState();
-    GetUserName().then((username) async {
-        await getKioskNamesFromUser(username).then((kiosknames) async{
-          _trackerBoxes.addAll(kiosknames);
-        });
-        userName = username ?? ''; // Assign the fetched userKey or an empty string if null
-    });
+    _fetchKioskNames();
   }
 
+  Future<void> _fetchKioskNames() async {
+    try {
+      String username = await GetUserName();
+      List<String> kioskNames = await getKioskNamesFromUser(username);
+      setState(() {
+        userName = username ?? '';
+        _trackerBoxes.addAll(kioskNames);
+      });
+    } catch (error) {
+      // Handle error
+    }
+  }
 
   Future<String> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -413,7 +421,6 @@ class _TrackerState extends State<Tracker> {
         .child('owners_collection')
         .child(userName)
         .child('kiosks');
-    kioskNames.add('addedkiosk');
 
     try {
       DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
