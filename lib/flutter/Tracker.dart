@@ -12,6 +12,7 @@ import 'package:thesis_app/SQLite/database_helper.dart';
 class Tracker extends StatefulWidget {
   final String? userName;
 
+
   const Tracker({Key? key, this.userName}) : super(key: key);
 
   @override
@@ -395,7 +396,13 @@ class _TrackerState extends State<Tracker> {
 
   Future<List<String>> getKioskNamesFromUser(String userKey) async {
     List<String> kioskNames = [];
-    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
+    DatabaseReference kiosksRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child('hehe')
+        .child('denominations');
 
     try {
       DataSnapshot snapshot = (await kiosksRef.once()) as DataSnapshot;

@@ -17,14 +17,15 @@ class TrackerBox extends StatefulWidget {
 class _TrackerBoxState extends State<TrackerBox> {
   bool _expanded = false;
   late String userKey; // Define userKey variable
+  late String userName; // Define userKey variable
 
   @override
   void initState() {
     super.initState();
     // Fetch userKey based on username when the widget is initialized
-    getUserKeyByUsername(widget.boxName).then((key) {
+    GetUserName().then((username) {
       setState(() {
-        userKey = key ?? ''; // Assign the fetched userKey or an empty string if null
+        userName = username ?? ''; // Assign the fetched userKey or an empty string if null
       });
     });
   }
@@ -44,6 +45,11 @@ class _TrackerBoxState extends State<TrackerBox> {
     return userKey;
   }
 
+  Future<String?> GetUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userName');
+  }
+
   Future<void> _deleteAndShowSnackBar(String kioskName) async {
     // Delete the widget
     widget.onDelete();
@@ -54,6 +60,7 @@ class _TrackerBoxState extends State<TrackerBox> {
 
   @override
   Widget build(BuildContext context) {
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -105,7 +112,11 @@ class _TrackerBoxState extends State<TrackerBox> {
                             FutureBuilder<DatabaseEvent>(
                               future: FirebaseDatabase.instance
                                   .ref()
-                                  .child('Denomination')
+                                  .child('owners_collection')
+                                  .child(userName)
+                                  .child('kiosks')
+                                  .child('hehe')
+                                  .child('denominations')
                                   .once(),
                               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) {
