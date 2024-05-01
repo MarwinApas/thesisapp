@@ -100,7 +100,11 @@ class _TrackerBoxState extends State<TrackerBox> {
                             FutureBuilder<DatabaseEvent>(
                               future: FirebaseDatabase.instance
                                   .ref()
-                                  .child('Denomination')
+                                  .child('owners_collection')
+                                  .child(userName)
+                                  .child('kiosks')
+                                  .child(widget.boxName)
+                                  .child('denominations')
                                   .once(),
                               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) {
