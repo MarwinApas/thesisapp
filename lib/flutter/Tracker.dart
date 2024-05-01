@@ -6,7 +6,8 @@ import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/trackerBox.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // for other locales
 import 'package:thesis_app/SQLite/database_helper.dart';
 
 
@@ -64,45 +65,45 @@ class _TrackerState extends State<Tracker> {
           children: [
             Container(
               height: MediaQuery.of(context).size.height * 0.9,
-              child: ListView.builder(
-                itemCount: _trackerBoxes.length,
-                itemBuilder: (context, index) {
-                  return TrackerBox(
-                    boxName: _trackerBoxes[index], // Use kiosk name from the list
-                    onDelete: () async {
-                      bool confirmDelete = await showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('Confirm Deletion'),
-                            content: Text('Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop(false);
-                                },
-                                child: Text('No'),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  Navigator.of(context).pop(true);
-                                  //await _deleteKiosk(widget.userName!,kioskName);
-                                },
-                                child: Text('Yes'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                      if (confirmDelete == true) {
-                        setState(() {
-                          _trackerBoxes.removeAt(index);
-                        });
-                      }
-                    },
-                  );
-                },
-              ),
+                child: ListView.builder(
+                  itemCount: _trackerBoxes.length,
+                  itemBuilder: (context, index) {
+                    return TrackerBox(
+                      boxName: _trackerBoxes[index], // Use kiosk name from the list
+                      onDelete: () async {
+                        bool confirmDelete = await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Confirm Deletion'),
+                              content: Text('Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(false);
+                                  },
+                                  child: Text('No'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    Navigator.of(context).pop(true);
+                                    //await _deleteKiosk(widget.userName!,kioskName);
+                                  },
+                                  child: Text('Yes'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (confirmDelete == true) {
+                          setState(() {
+                            _trackerBoxes.removeAt(index);
+                          });
+                        }
+                      },
+                    );
+                  },
+                ),
             ),
             Positioned(
               bottom: 0,
@@ -291,7 +292,7 @@ class _TrackerState extends State<Tracker> {
                                     if (kioskName.isNotEmpty) {
                                       await addKiosk(kioskName, userName);
                                       await addDenomination(kioskName,userName);
-
+                                      await sendAddKioskNotification(userName, kioskName);
                                       _updateTrackerBoxes(userName);
                                       Navigator.pop(context);
                                     } else {
@@ -532,5 +533,27 @@ class _TrackerState extends State<Tracker> {
     }
   }
 
+  Future<void> sendAddKioskNotification(String userName, String kioskName) async {
+    String dateAndTime = await getTimeStamp();
+    //dateAndTime = dateAndTime.replaceAll(".", "_"); // Replace periods with underscores
+    DatabaseReference kioskRef = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('notifications')
+        .child(dateAndTime);
+    kioskRef.set(
+        {
+          'message': 'Kiosk ${kioskName} has been added.',
+          'isRead': false
+        }
+        );
+  }
 
+  Future<String> getTimeStamp() async {
+    var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
+
+    var formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    String formattedDate = formatter.format(dateTime);
+    return formattedDate;
+  }
 }

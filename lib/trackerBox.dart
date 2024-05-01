@@ -132,7 +132,6 @@ class _TrackerBoxState extends State<TrackerBox> {
 
     return completer.future;
   }
-
   Future<void> fetchCurrencyRates() async {
     await fetchUSDRate();
     await AUDRateToday();
@@ -419,19 +418,18 @@ class _TrackerBoxState extends State<TrackerBox> {
                                             String currency = selectedCurrency;
                                             double price = double.tryParse(priceController.text) ?? 0.0;
 
-                                            // Handle setting the price action here (e.g., save to database)
                                             DatabaseReference currencyPriceRef = FirebaseDatabase.instance
                                                 .ref()
                                                 .child('currency_price')
                                                 .child(currency);
 
                                             currencyPriceRef.set(price).then((_) {
-                                              Navigator.pop(context); // Close the dialog
+                                              Navigator.pop(context);
                                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                                 content: Text('Price for $currency set successfully!'),
                                               ));
                                             }).catchError((error) {
-                                              Navigator.pop(context); // Close the dialog
+                                              Navigator.pop(context);
                                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                                 content: Text('Error setting price: $error'),
                                               ));
@@ -475,5 +473,3 @@ class _TrackerBoxState extends State<TrackerBox> {
     );
   }
 }
-
-
