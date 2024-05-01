@@ -172,7 +172,6 @@ class _AlertsState extends State<Alerts> {
                   },
                 ),
               ),
-
               Container(
                 height: 2,
                 color: Colors.grey,
@@ -196,7 +195,7 @@ class _AlertsState extends State<Alerts> {
               Padding(
                 padding: const EdgeInsets.only(left: 8.0),
                 child: Text(
-                  "Notification will pop up here",
+                  "",
                   style: TextStyle(
                     color: Colors.grey,
                     fontSize: 14,

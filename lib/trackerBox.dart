@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -21,14 +23,13 @@ class _TrackerBoxState extends State<TrackerBox> {
   @override
   void initState() {
     super.initState();
-    // Fetch userKey based on username when the widget is initialized
+    fetchCurrencyRates();
     GetUserName().then((username) {
       setState(() {
-        userName = username ?? ''; // Assign the fetched userKey or an empty string if null
+        userName = username ?? '';
       });
     });
   }
-
 
   Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -46,6 +47,98 @@ class _TrackerBoxState extends State<TrackerBox> {
     await kiosksRef.remove();
   }
 
+  double usdRate = 0.0;
+  double audRate = 0.0;
+  double krwRate = 0.0;
+
+//READ USD CURRENCY RATE METHOD
+  Future<double> fetchUSDRate() async {
+    DatabaseReference usdRateRef = FirebaseDatabase.instance
+        .ref()
+        .child('currency_rate')
+        .child('USD_rate');
+
+    Completer<double> completer = Completer<double>();
+
+    usdRateRef.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        double rate = double.parse(event.snapshot.value.toString());
+        setState(() {
+          usdRate = rate;
+        });
+        completer.complete(rate); // Resolve the Future with the fetched rate
+      } else {
+        print("USD rate snapshot does not exist");
+        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+      }
+    }, onError: (error) {
+      print("Error fetching USD rate: $error");
+      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+    });
+
+    return completer.future;
+  }
+// READ AUD CURRENCY RATE METHOD
+  Future<double> AUDRateToday() async {
+    DatabaseReference usdRateRef = FirebaseDatabase.instance
+        .ref()
+        .child('currency_rate')
+        .child('AUD_rate');
+
+    Completer<double> completer = Completer<double>();
+
+    usdRateRef.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        double rate = double.parse(event.snapshot.value.toString());
+        setState(() {
+          audRate = rate;
+        });
+        completer.complete(rate); // Resolve the Future with the fetched rate
+      } else {
+        print("USD rate snapshot does not exist");
+        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+      }
+    }, onError: (error) {
+      print("Error fetching USD rate: $error");
+      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+    });
+
+    return completer.future;
+  }
+// READ KRW CURRENCY RATE METHOD
+  Future<double> KRWRateToday() async {
+    DatabaseReference usdRateRef = FirebaseDatabase.instance
+        .ref()
+        .child('currency_rate')
+        .child('KRW_rate');
+
+    Completer<double> completer = Completer<double>();
+
+    usdRateRef.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        double rate = double.parse(event.snapshot.value.toString());
+        setState(() {
+          krwRate = rate;
+        });
+        completer.complete(rate); // Resolve the Future with the fetched rate
+      } else {
+        print("USD rate snapshot does not exist");
+        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+      }
+    }, onError: (error) {
+      print("Error fetching USD rate: $error");
+      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+    });
+
+    return completer.future;
+  }
+
+  Future<void> fetchCurrencyRates() async {
+    await fetchUSDRate();
+    await AUDRateToday();
+    await KRWRateToday();
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -57,7 +150,7 @@ class _TrackerBoxState extends State<TrackerBox> {
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        height: _expanded ? 250 : 80, // Set expanded and default heights
+        height: _expanded ? 580 : 80, // Set expanded and default heights
         child: Slidable(
           actionPane: SlidableDrawerActionPane(),
           child: Padding(
@@ -88,7 +181,6 @@ class _TrackerBoxState extends State<TrackerBox> {
                       ),
                     ),
                   ),
-                  // Conditionally show the content based on expanded state
                   if (_expanded)
                     Align(
                       alignment: Alignment.center,
@@ -163,10 +255,206 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 }
                               },
                             ),
+                            SizedBox(height: 14),
+                            Text(
+                              "TRANSACTION HISTORY",
+                              style: TextStyle(
+                                fontSize: 18, // Set the font size
+                                fontWeight: FontWeight.bold, // Set the font weight to bold
+                                color: Colors.black, // Set the text color
+                              ),
+                            ),
+                            SizedBox(height: 7),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20), // Set border radius to 20 pixels
+                                border: Border.all(width: 2), // Set border width to 2 pixels
+                              ),
+                              padding: EdgeInsets.all(2.0), // Add padding around the ListView
+                              height: 230, // Set a specific height for the Container
+                              width: 290,
+                              child: ListView.builder(
+                                itemCount: 7, // Example item count, replace with your actual data count
+                                itemBuilder: (BuildContext context, int index) {
+                                  return ListTile(
+                                    title: Text('A new transaction on kiosk $index'), // Example text for each list item
+                                  );
+                                },
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () async {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    String selectedCurrency = 'USD'; // Default selected currency
+                                    TextEditingController priceController = TextEditingController(); // Controller for the price input field
+
+                                    return AlertDialog(
+                                      title: Text("Set Price"),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min, // Set the dialog content size to minimum
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "DAILY RATE:",
+                                            style: TextStyle(
+                                              fontSize: 14, // Set the font size
+                                              fontWeight: FontWeight.bold, // Set the font weight to bold
+                                              color: Colors.black, // Set the text color
+                                            ),
+                                          ),
+                                          FutureBuilder<double>(
+                                            future: fetchUSDRate(), // Call your fetch methods here
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                                return CircularProgressIndicator();
+                                              } else if (snapshot.hasError) {
+                                                return Text("Error: ${snapshot.error}");
+                                              } else if (!snapshot.hasData) {
+                                                return Text("No data available");
+                                              } else {
+                                                // Use snapshot.data to access the fetched rate
+                                                double usdRate = snapshot.data!;
+                                                return Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "USD: ${usdRate.toStringAsFixed(2)} PESOS",
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                    FutureBuilder<double>(
+                                                      future: AUDRateToday(), // Call your fetch methods here
+                                                      builder: (context, snapshot) {
+                                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                                          return CircularProgressIndicator();
+                                                        } else if (snapshot.hasError) {
+                                                          return Text("Error: ${snapshot.error}");
+                                                        } else if (!snapshot.hasData) {
+                                                          return Text("No data available");
+                                                        } else {
+                                                          // Use snapshot.data to access the fetched rate
+                                                          double audRate = snapshot.data!;
+                                                          return Text(
+                                                            "AUD: ${audRate.toStringAsFixed(2)} PESOS",
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.black,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
+                                                    FutureBuilder<double>(
+                                                      future: KRWRateToday(), // Call your fetch methods here
+                                                      builder: (context, snapshot) {
+                                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                                          return CircularProgressIndicator();
+                                                        } else if (snapshot.hasError) {
+                                                          return Text("Error: ${snapshot.error}");
+                                                        } else if (!snapshot.hasData) {
+                                                          return Text("No data available");
+                                                        } else {
+                                                          // Use snapshot.data to access the fetched rate
+                                                          double krwRate = snapshot.data!;
+                                                          return Text(
+                                                            "KRW: ${krwRate.toStringAsFixed(3)} PESOS",
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.black,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              }
+                                            },
+                                          ),
+                                          DropdownButtonFormField<String>(
+                                            value: selectedCurrency,
+                                            items: ['USD', 'AUD', 'KRW'].map((String currency) {
+                                              return DropdownMenuItem<String>(
+                                                value: currency,
+                                                child: Text(currency),
+                                              );
+                                            }).toList(),
+                                            onChanged: (String? newValue) {
+                                              if (newValue != null) {
+                                                setState(() {
+                                                  selectedCurrency = newValue;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          SizedBox(height: 10), // Add space between dropdown and text field
+                                          TextField(
+                                            controller: priceController,
+                                            keyboardType: TextInputType.number, // Set keyboard type to number
+                                            decoration: InputDecoration(
+                                              labelText: "Enter Price",
+                                              border: OutlineInputBorder(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context); // Close the dialog
+                                          },
+                                          child: Text("Cancel"), // Text for the cancel button
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            // Get the selected currency and price here
+                                            String currency = selectedCurrency;
+                                            double price = double.tryParse(priceController.text) ?? 0.0;
+
+                                            // Handle setting the price action here (e.g., save to database)
+                                            DatabaseReference currencyPriceRef = FirebaseDatabase.instance
+                                                .ref()
+                                                .child('currency_price')
+                                                .child(currency);
+
+                                            currencyPriceRef.set(price).then((_) {
+                                              Navigator.pop(context); // Close the dialog
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                content: Text('Price for $currency set successfully!'),
+                                              ));
+                                            }).catchError((error) {
+                                              Navigator.pop(context); // Close the dialog
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                content: Text('Error setting price: $error'),
+                                              ));
+                                            });
+                                          },
+                                          child: Text("Set Price"), // Text for the set price button
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Text("Set Price"), // Label the button as "Set Price"
+                            ),
+
+
                           ],
                         ),
                       ),
                     ),
+
+                  SizedBox(height: 10),
+
                 ],
               ),
             ),
@@ -187,3 +475,5 @@ class _TrackerBoxState extends State<TrackerBox> {
     );
   }
 }
+
+
