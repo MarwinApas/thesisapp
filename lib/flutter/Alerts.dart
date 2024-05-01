@@ -14,51 +14,63 @@ class Alerts extends StatefulWidget {
 }
 
 class _AlertsState extends State<Alerts> {
-  DatabaseReference _kioskRef = FirebaseDatabase.instance.reference().child('kiosk'); // Firebase reference for 'kiosk'
   @override
   void initState() {
     super.initState();
-    _checkNewKiosk(); // Call the method to check for new kiosks when the Alerts tab is initialized
+    fetchUserKiosks();
   }
 
-  void _checkNewKiosk() async {
-    DataSnapshot snapshot = (await _kioskRef.once()) as DataSnapshot; // Get a snapshot of the 'kiosk' value
-    int currentKiosk = snapshot.value as int; // Assuming 'kiosk' is an integer value in Firebase
 
-    // Check if the current kiosk value is greater than the previous value stored in local storage
-    // You can use shared_preferences or another local storage solution for this
-    int previousKiosk = await _getPreviousKioskValue(); // Implement this method to get the previous kiosk value
-    if (currentKiosk > previousKiosk) {
-      // If a new kiosk has been added, show the notification
-      _showNewKioskNotification(currentKiosk);
+//gets the current logged-in username
+  Future<String> GetUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userName')!;
+  }
+  List<String?> kioskNames = [];
+  Future<void> fetchUserKiosks() async {
+    String userName = await GetUserName();
+
+
+    if (userName != null) {
+      try {
+        List<String?> fetchedKioskNames = await getKioskNamesFromUser(userName);
+        kioskNames.clear();
+        kioskNames.addAll(fetchedKioskNames);
+
+        setState(() {});
+      } catch (e) {
+        print('Error fetching kiosk names: $e');
+      }
+    } else {
+      print('UserName is null');
     }
   }
+  Future<List<String?>> getKioskNamesFromUser(String userName) async {
+    List<String?> kioskNames = [];
+    DatabaseReference kiosksRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks');
 
-  Future<int> _getPreviousKioskValue() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? previousKiosk = prefs.getInt('previousKiosk'); // Get the previous kiosk value from SharedPreferences
-    return previousKiosk ?? 0; // Return 0 if no previous value is found
+    try {
+      DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+
+        kioskMap.keys.forEach((key) {
+          if (key is String) {
+            kioskNames.add(key);
+          }
+        });
+      }
+    } catch (e) {
+      print('Error fetching kiosk names: $e');
+    }
+
+    return kioskNames;
   }
 
-  void _showNewKioskNotification(int currentKiosk) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("New Kiosk Added"),
-          content: Text("A new kiosk has been added. Current kiosk count: $currentKiosk"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
-  }
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
@@ -101,39 +113,66 @@ class _AlertsState extends State<Alerts> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "UNREAD NOTIFICATIONS",
-                  style: TextStyle(
-                    color: Color(0xFFA94F02),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items to the start and end of the row
+                  children: [
+                    Text(
+                      "UNREAD NOTIFICATIONS",
+                      style: TextStyle(
+                        color: Color(0xFFA94F02),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete,
+                        color: Colors.red, // Adjust the color as needed
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          kioskNames.clear(); // Clear the kioskNames list
+                        });
+                        // For example, you can show a confirmation dialog here
+                      },
+                    ),
+                  ],
                 ),
               ),
+
               Container(
                 height: 2,
                 color: Colors.grey,
               ),
               SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      color: Colors.orange,
-                    ),
-                    SizedBox(width: 8), // Add some space between icon and text
-                    Text(
-                      "A new device has been added",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 14,
+              Container(
+                height: 150, // Set a height for the container
+                child: ListView.builder(
+                  itemCount: kioskNames.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: Colors.orange,
+                          ),
+                          SizedBox(width: 8), // Add some space between icon and text
+                          Text(
+                            "Kiosk '${kioskNames[index]}' has been added",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
+
               Container(
                 height: 2,
                 color: Colors.grey,
@@ -256,7 +295,6 @@ class _AlertsState extends State<Alerts> {
                       ),
                     ),
                   ),
-
                   Container(
                     width: 60,
                     height: 60,

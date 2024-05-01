@@ -16,44 +16,39 @@ class TrackerBox extends StatefulWidget {
 
 class _TrackerBoxState extends State<TrackerBox> {
   bool _expanded = false;
-  late String userKey; // Define userKey variable
+  late String userName; // Define userKey variable
 
   @override
   void initState() {
     super.initState();
     // Fetch userKey based on username when the widget is initialized
-    getUserKeyByUsername(widget.boxName).then((key) {
+    GetUserName().then((username) {
       setState(() {
-        userKey = key ?? ''; // Assign the fetched userKey or an empty string if null
+        userName = username ?? ''; // Assign the fetched userKey or an empty string if null
       });
     });
   }
 
-  Future<String?> getUserKeyByUsername(String userName) async {
+
+  Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? storedUserName = prefs.getString('userName'); // Rename the variable here
-    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
-    DataSnapshot dataSnapshot = (await ownersRef.orderByChild('userName').equalTo(storedUserName).once()).snapshot;
-    String? userKey;
-
-    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
-    if (values != null) {
-      userKey = values.keys.first.toString();
-    }
-
-    return userKey;
+    return prefs.getString('userName');
   }
 
   Future<void> _deleteAndShowSnackBar(String kioskName) async {
     // Delete the widget
     widget.onDelete();
     // Remove the corresponding kioskName from the database
-    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
-    await kiosksRef.child(kioskName).remove();
+    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName);
+    await kiosksRef.remove();
   }
 
   @override
   Widget build(BuildContext context) {
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -62,13 +57,13 @@ class _TrackerBoxState extends State<TrackerBox> {
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        height: _expanded ? 590 : 80, // Set expanded and default heights
+        height: _expanded ? 250 : 80, // Set expanded and default heights
         child: Slidable(
           actionPane: SlidableDrawerActionPane(),
-          actionExtentRatio: 1 / 5,
           child: Padding(
             padding: const EdgeInsets.all(14.0),
             child: Container(
+              height: _expanded ? 590 : 80, // Adjust the height as needed
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(50.0),

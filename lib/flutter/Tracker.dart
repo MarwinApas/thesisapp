@@ -6,11 +6,13 @@ import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/trackerBox.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:thesis_app/newTrackerBox.dart';
+
 import 'package:thesis_app/SQLite/database_helper.dart';
+
 
 class Tracker extends StatefulWidget {
   final String? userName;
+
 
   const Tracker({Key? key, this.userName}) : super(key: key);
 
@@ -20,8 +22,7 @@ class Tracker extends StatefulWidget {
 
 class _TrackerState extends State<Tracker> {
   List<String> _trackerBoxes = [];
-
-  @override
+  late String userName;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +78,7 @@ class _TrackerState extends State<Tracker> {
                             TextButton(
                               onPressed: () async {
                                 Navigator.of(context).pop(true);
-                                await _deleteKiosk(widget.userName!, _trackerBoxes[index]);
+                                //await _deleteKiosk(widget.userName!,kioskName);
                               },
                               child: Text('Yes'),
                             ),
@@ -259,8 +260,7 @@ class _TrackerState extends State<Tracker> {
               onTap: () async {
                 SharedPreferences prefs = await SharedPreferences.getInstance();
                 String? userName = prefs.getString('userName');
-                String? userKey = await getUserKeyByUsername(userName!);
-                if (userKey != null && userKey.isNotEmpty) {
+                if (userName != null && userName.isNotEmpty) {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -281,7 +281,10 @@ class _TrackerState extends State<Tracker> {
                               TextButton(
                                 onPressed: () async {
                                   if (kioskName.isNotEmpty) {
-                                    await addKiosk(kioskName, userKey);
+                                    await addKiosk(kioskName, userName);
+                                    await addDenomination(kioskName,userName);
+
+                                    _updateTrackerBoxes(userName);
                                     Navigator.pop(context);
                                   } else {
                                     showDialog(
@@ -378,32 +381,56 @@ class _TrackerState extends State<Tracker> {
 
 
 //METHODS
+
+  @override
   void initState() {
     super.initState();
-    _updateTrackerBoxes();
+    _fetchKioskNames();
   }
 
-  void _updateTrackerBoxes() async {
-    String? userKey = await getUserKeyByUsername(widget.userName!);
-    if (userKey != null) {
-      List<String> kioskNames = await getKioskNamesFromUser(userKey);
+  Future<void> _fetchKioskNames() async {
+    try {
+      String username = await GetUserName();
+      List<String> kioskNames = await getKioskNamesFromUser(username);
+      setState(() {
+        userName = username ?? '';
+        _trackerBoxes.addAll(kioskNames);
+      });
+    } catch (error) {
+      // Handle error
+    }
+  }
+
+  Future<String> GetUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userName')!;
+  }
+
+  void _updateTrackerBoxes(userName) async {
+    if (userName! != null) {
+      List<String> kioskNames = await getKioskNamesFromUser(widget.userName!);
       setState(() {
         _trackerBoxes = kioskNames;
       });
     }
   }
 
-  Future<List<String>> getKioskNamesFromUser(String userKey) async {
+  Future<List<String>> getKioskNamesFromUser(String userName) async {
     List<String> kioskNames = [];
-    DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
+    DatabaseReference kiosksRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks');
 
     try {
-      DataSnapshot snapshot = (await kiosksRef.once()) as DataSnapshot;
+      DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
       if (snapshot.value != null && snapshot.value is Map) {
         Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
-        kioskMap.forEach((key, value) {
-          if (value is Map && value.containsKey('kioskName')) {
-            kioskNames.add(value['kioskName']);
+
+        kioskMap.keys.forEach((key) {
+          if (key is String) {
+            kioskNames.add(key);
           }
         });
       }
@@ -415,73 +442,83 @@ class _TrackerState extends State<Tracker> {
     return kioskNames;
   }
 
-  Future<String?> getUserKeyByUsername(String userName) async {
-    DatabaseReference ownersRef = FirebaseDatabase.instance.ref().child('owners_collection');
-    DataSnapshot dataSnapshot = (await ownersRef.orderByChild('userName').equalTo(userName).once()).snapshot;
-    String? userKey;
-
-    Map<dynamic, dynamic>? values = dataSnapshot.value as Map<dynamic, dynamic>?;
-    if (values != null) {
-    userKey = values.keys.first.toString();
-    }
-
-    return userKey;
-  }
-
-  Future<void> addKiosk(String kioskName, String userKey) async {
+  Future<void> addKiosk(String kioskName, String userName) async {
     DatabaseReference kioskRef = FirebaseDatabase.instance
         .ref()
         .child('owners_collection')
-        .child(userKey)
-        .push();
-    await kioskRef.set({
-      'kioskName': kioskName,
-    });
-
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName);
+    kioskRef.push();
 
     setState(() {
       _trackerBoxes.add(kioskName); // Update the list with the new kiosk name
     });
   }
 
-  Future<void> _deleteKiosk(String userName, String kioskName) async {
-    String? userKey = await getUserKeyByUsername(userName);
-    if (userKey != null) {
-      DatabaseReference kiosksRef = FirebaseDatabase.instance.ref().child('owners_collection').child(userKey);
 
-      // Query the kiosks reference for the specific kiosk to delete
-      Query kioskQuery = kiosksRef.orderByChild('kioskName').equalTo(kioskName).limitToFirst(1);
-      DataSnapshot snapshot = (await kioskQuery.once()) as DataSnapshot;
-      Map<dynamic, dynamic>? kioskMap = snapshot.value as Map<dynamic, dynamic>?;
+  Future<void> addDenomination(String kioskName, String userName) async {
+    DatabaseReference denominationsRef =
+    FirebaseDatabase.instance.ref().child('Denomination');
 
-      if (kioskMap != null) {
-        String kioskKey = kioskMap.keys.first.toString();
-        await kiosksRef.child(kioskKey).remove();
+    // Get the database event
+    DatabaseEvent denominationsEvent = await denominationsRef.once();
 
-        // Remove the kiosk name from the _trackerBoxes list
-        setState(() {
-          _trackerBoxes.remove(kioskName);
+    // Check if the event snapshot is not null and is a DataSnapshot
+    if (denominationsEvent.snapshot != null &&
+        denominationsEvent.snapshot is DataSnapshot) {
+      DataSnapshot dataSnapshot = denominationsEvent.snapshot as DataSnapshot;
+      Map<dynamic, dynamic>? denominationsData =
+      dataSnapshot.value as Map<dynamic, dynamic>?;
+
+      if (denominationsData != null) {
+        DatabaseReference kioskRef = FirebaseDatabase.instance
+            .ref()
+            .child('owners_collection')
+            .child(userName)
+            .child('kiosks')
+            .child(kioskName)
+            .child('denominations');
+
+        await kioskRef.set({
+          '1000': denominationsData['1000'],
+          '100': denominationsData['100'],
+          '20': denominationsData['20'],
+          '5': denominationsData['5'],
+          '1': denominationsData['1'],
         });
-
-        // Show a SnackBar indicating item deletion
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Kiosk deleted'),
-          ),
-        );
       } else {
-        // Show a SnackBar indicating that the kiosk was not found
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Kiosk not found'),
-          ),
-        );
+        print('Denominations data not found.');
+        // Handle the case where denominations data is not available
       }
     } else {
-      // Show a SnackBar indicating that the user key was not found
+      print('Error fetching denominations data.');
+      // Handle the case where fetching denominations data failed
+    }
+  }
+
+  Future<void> _deleteKiosk(String userName, String kioskName) async {
+    if (kioskName != null) {
+      DatabaseReference kiosksRef = FirebaseDatabase.instance.ref()
+          .child('owners_collection')
+          .child(userName)
+          .child('kiosks')
+          .child(kioskName);
+      kiosksRef.remove();
+      // Remove the kiosk name from the _trackerBoxes list
+      setState(() {
+        _trackerBoxes.remove(kioskName);
+      });
+
+      // Show a SnackBar indicating item deletion
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('User key not found'),
+          content: Text('Kiosk deleted'),
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kiosk not found'),
         ),
       );
     }

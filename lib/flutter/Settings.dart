@@ -234,7 +234,7 @@ class _SettingsState extends State<Settings> {
               );
             },
             style: ElevatedButton.styleFrom(
-              primary: Colors.white,
+              backgroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             ),
             child: Row(
@@ -261,7 +261,7 @@ class _SettingsState extends State<Settings> {
               );
             },
             style: ElevatedButton.styleFrom(
-              primary: Colors.white,
+              backgroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             ),
             child: Row(
