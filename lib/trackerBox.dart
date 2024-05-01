@@ -57,13 +57,13 @@ class _TrackerBoxState extends State<TrackerBox> {
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        height: _expanded ? 590 : 80, // Set expanded and default heights
+        height: _expanded ? 250 : 80, // Set expanded and default heights
         child: Slidable(
           actionPane: SlidableDrawerActionPane(),
-          actionExtentRatio: 1 / 5,
           child: Padding(
             padding: const EdgeInsets.all(14.0),
             child: Container(
+              height: _expanded ? 590 : 80, // Adjust the height as needed
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(50.0),
