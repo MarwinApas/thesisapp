@@ -36,9 +36,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
   //for realtime database
   Future<String> addUserDetails(String userName,String firstName, String lastName) async {
-    DatabaseReference reference = FirebaseDatabase.instance.ref().child('owners_collection');
+    DatabaseReference reference = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('user_data');
     //String userKey = reference.push().key!; // Generate unique key
-    await reference.child(userName).set({
+    await reference.set({
       'userName': userName,
       'firstName': firstName,
       'lastName': lastName,

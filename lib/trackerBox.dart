@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TrackerBox extends StatefulWidget {
@@ -19,6 +20,9 @@ class TrackerBox extends StatefulWidget {
 class _TrackerBoxState extends State<TrackerBox> {
   bool _expanded = false;
   late String userName; // Define userKey variable
+  double usdRate = 0.0;
+  double audRate = 0.0;
+  double krwRate = 0.0;
 
   @override
   void initState() {
@@ -29,6 +33,8 @@ class _TrackerBoxState extends State<TrackerBox> {
         userName = username ?? '';
       });
     });
+    getAlertKioskFlag();
+    checkRemainingStocksPerDenomination();
   }
 
   Future<String?> GetUserName() async {
@@ -46,11 +52,6 @@ class _TrackerBoxState extends State<TrackerBox> {
         .child(kioskName);
     await kiosksRef.remove();
   }
-
-  double usdRate = 0.0;
-  double audRate = 0.0;
-  double krwRate = 0.0;
-
 //READ USD CURRENCY RATE METHOD
   Future<double> fetchUSDRate() async {
     DatabaseReference usdRateRef = FirebaseDatabase.instance
@@ -132,12 +133,113 @@ class _TrackerBoxState extends State<TrackerBox> {
 
     return completer.future;
   }
-
   Future<void> fetchCurrencyRates() async {
     await fetchUSDRate();
     await AUDRateToday();
     await KRWRateToday();
   }
+
+  Future<String> getTimeStamp() async {
+    var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
+
+    var formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    String formattedDate = formatter.format(dateTime);
+    return formattedDate;
+  }
+
+  Future<void> getAlertKioskFlag() async {
+    String dateAndTime = await getTimeStamp();
+    DatabaseReference alertButtonState = FirebaseDatabase.instance.ref('alertButton');
+    alertButtonState.onValue.listen((event) {
+      dynamic alertButton = event.snapshot.value ?? false; // Default to false if value is null
+      if (alertButton) {
+        /*DatabaseReference sendAlertButtonNotification = FirebaseDatabase.instance.ref()
+            .child('owners_collection')
+            .child(userName)
+            .child('kiosks')
+            .child(kioskName)
+            .child('alertNotification')
+            .child(dateAndTime);
+        sendAlertButtonNotification.set({
+          'message': 'the alert button on the ${kioskName} has been pressed!',
+          'isRead': false
+        });*/
+
+        // Send the alert notification to 'notifications'
+        DatabaseReference sendAlertNotification = FirebaseDatabase.instance.ref()
+            .child('owners_collection')
+            .child(userName)
+            .child('notifications')
+            .child(dateAndTime);
+        sendAlertNotification.set({
+          'message': 'the alert button in ${widget.boxName} has been pressed!',
+          'isRead': false
+        }).then((_) {
+          DatabaseReference returnTheAlertIntoFalse = FirebaseDatabase.instance.ref('alertButton');
+          returnTheAlertIntoFalse.set(false)
+              .then((_) => print('Alert button set to false after sending notifications'))
+              .catchError((error) => print('Error setting alert button to false: $error'));
+        }).catchError((error) => print("Error sending alert notification: $error"));
+      }
+    });
+  }
+  //constantly checks the remainingbalance
+  Future<void> checkRemainingStocksPerDenomination() async {
+    DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(widget.boxName)
+        .child('denominations');
+
+    stocksPerDenominationRef.onValue.listen((event) {
+      if(event.snapshot.value != null && event.snapshot.value is Map) {
+        Map<dynamic, dynamic> denominationsData = event.snapshot.value as Map<dynamic, dynamic>;
+
+        Map<String, int> denominationsStock = {
+          '1000': denominationsData['1000'] ?? 0, // Default to 0 if data is null
+          '100': denominationsData['100'] ?? 0,
+          '20': denominationsData['20'] ?? 0,
+          '5': denominationsData['5'] ?? 0,
+          '1': denominationsData['1'] ?? 0,
+        };
+
+        // Now you can check the stock levels and trigger notifications or take other actions
+        if (denominationsStock['1000']! < 3000) {
+          sendLowDenominationNotification(userName, widget.boxName, '1000', '');
+        }
+        if (denominationsStock['100']! < 500) {
+          sendLowDenominationNotification(userName, widget.boxName, '100', '');
+        }
+        if (denominationsStock['20']! < 100) {
+          sendLowDenominationNotification(userName, widget.boxName, '20', '');
+        }
+        if (denominationsStock['5']! < 50) {
+          sendLowDenominationNotification(userName, widget.boxName, '5', '');
+        }
+        if (denominationsStock['1']! < 20) {
+          sendLowDenominationNotification(userName, widget.boxName, '1', '');
+        }
+
+      }
+    });
+  }
+
+  Future<void> sendLowDenominationNotification(String userName, String kioskName, String denomination, String message) async {
+    String dateAndTime = await getTimeStamp();
+    DatabaseReference denominationRef = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('notifications')
+        .child(dateAndTime);
+    denominationRef.set(
+        {
+          'message': 'Kiosk $kioskName has low on $denomination peso stocks. $message',
+          'isRead': false
+        }
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -419,19 +521,18 @@ class _TrackerBoxState extends State<TrackerBox> {
                                             String currency = selectedCurrency;
                                             double price = double.tryParse(priceController.text) ?? 0.0;
 
-                                            // Handle setting the price action here (e.g., save to database)
                                             DatabaseReference currencyPriceRef = FirebaseDatabase.instance
                                                 .ref()
                                                 .child('currency_price')
                                                 .child(currency);
 
                                             currencyPriceRef.set(price).then((_) {
-                                              Navigator.pop(context); // Close the dialog
+                                              Navigator.pop(context);
                                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                                 content: Text('Price for $currency set successfully!'),
                                               ));
                                             }).catchError((error) {
-                                              Navigator.pop(context); // Close the dialog
+                                              Navigator.pop(context);
                                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                                 content: Text('Error setting price: $error'),
                                               ));
@@ -475,5 +576,3 @@ class _TrackerBoxState extends State<TrackerBox> {
     );
   }
 }
-
-

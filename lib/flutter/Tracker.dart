@@ -6,7 +6,8 @@ import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/trackerBox.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // for other locales
 import 'package:thesis_app/SQLite/database_helper.dart';
 
 
@@ -23,6 +24,7 @@ class Tracker extends StatefulWidget {
 class _TrackerState extends State<Tracker> {
   List<String> _trackerBoxes = [];
   late String userName;
+  String kioskName = '';
 
   @override
   Widget build(BuildContext context) {
@@ -64,45 +66,45 @@ class _TrackerState extends State<Tracker> {
           children: [
             Container(
               height: MediaQuery.of(context).size.height * 0.9,
-              child: ListView.builder(
-                itemCount: _trackerBoxes.length,
-                itemBuilder: (context, index) {
-                  return TrackerBox(
-                    boxName: _trackerBoxes[index], // Use kiosk name from the list
-                    onDelete: () async {
-                      bool confirmDelete = await showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('Confirm Deletion'),
-                            content: Text('Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop(false);
-                                },
-                                child: Text('No'),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  Navigator.of(context).pop(true);
-                                  //await _deleteKiosk(widget.userName!,kioskName);
-                                },
-                                child: Text('Yes'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                      if (confirmDelete == true) {
-                        setState(() {
-                          _trackerBoxes.removeAt(index);
-                        });
-                      }
-                    },
-                  );
-                },
-              ),
+                child: ListView.builder(
+                  itemCount: _trackerBoxes.length,
+                  itemBuilder: (context, index) {
+                    return TrackerBox(
+                      boxName: _trackerBoxes[index], // Use kiosk name from the list
+                      onDelete: () async {
+                        bool confirmDelete = await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Confirm Deletion'),
+                              content: Text('Are you sure you want to delete this KIOSK? (UNDO IS CURRENTLY NOT SUPPORTED)'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(false);
+                                  },
+                                  child: Text('No'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    Navigator.of(context).pop(true);
+                                    //await _deleteKiosk(widget.userName!,kioskName);
+                                  },
+                                  child: Text('Yes'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (confirmDelete == true) {
+                          setState(() {
+                            _trackerBoxes.removeAt(index);
+                          });
+                        }
+                      },
+                    );
+                  },
+                ),
             ),
             Positioned(
               bottom: 0,
@@ -272,7 +274,7 @@ class _TrackerState extends State<Tracker> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        String kioskName = '';
+
                         return AlertDialog(
                           title: Text("ADD NEW KIOSK"),
                           content: SingleChildScrollView(
@@ -291,7 +293,7 @@ class _TrackerState extends State<Tracker> {
                                     if (kioskName.isNotEmpty) {
                                       await addKiosk(kioskName, userName);
                                       await addDenomination(kioskName,userName);
-
+                                      await sendAddKioskNotification(userName, kioskName);
                                       _updateTrackerBoxes(userName);
                                       Navigator.pop(context);
                                     } else {
@@ -390,11 +392,13 @@ class _TrackerState extends State<Tracker> {
 
 
 //METHODS
-
   @override
   void initState() {
     super.initState();
     _fetchKioskNames();
+    //checkRemainingStocksPerDenomination(userName, kioskName);
+    //getAlertKioskFlag();
+    //checkRemainingStocksPerDenomination();
   }
 
   Future<void> _fetchKioskNames() async {
@@ -531,6 +535,124 @@ class _TrackerState extends State<Tracker> {
       );
     }
   }
+
+  Future<void> sendAddKioskNotification(String userName, String kioskName) async {
+    String dateAndTime = await getTimeStamp();
+    //dateAndTime = dateAndTime.replaceAll(".", "_"); // Replace periods with underscores
+    DatabaseReference kioskRef = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('notifications')
+        .child(dateAndTime);
+    kioskRef.set(
+        {
+          'message': 'Kiosk ${kioskName} has been added.',
+          'isRead': false
+        }
+        );
+  }
+
+  Future<String> getTimeStamp() async {
+    var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
+
+    var formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    String formattedDate = formatter.format(dateTime);
+    return formattedDate;
+  }
+
+  /*Future<void> getAlertKioskFlag() async {
+    String dateAndTime = await getTimeStamp();
+    DatabaseReference alertButtonState = FirebaseDatabase.instance.ref('alertButton');
+    alertButtonState.onValue.listen((event) {
+      dynamic alertButton = event.snapshot.value ?? false; // Default to false if value is null
+      if (alertButton) {
+        /*DatabaseReference sendAlertButtonNotification = FirebaseDatabase.instance.ref()
+            .child('owners_collection')
+            .child(userName)
+            .child('kiosks')
+            .child(kioskName)
+            .child('alertNotification')
+            .child(dateAndTime);
+        sendAlertButtonNotification.set({
+          'message': 'the alert button on the ${kioskName} has been pressed!',
+          'isRead': false
+        });*/
+
+        // Send the alert notification to 'notifications'
+        DatabaseReference sendAlertNotification = FirebaseDatabase.instance.ref()
+            .child('owners_collection')
+            .child(userName)
+            .child('notifications')
+            .child(dateAndTime);
+        sendAlertNotification.set({
+          'message': 'the alert button${kioskName} has been pressed!',
+          'isRead': false
+        }).then((_) {
+          DatabaseReference returnTheAlertIntoFalse = FirebaseDatabase.instance.ref('alertButton');
+          returnTheAlertIntoFalse.set(false)
+              .then((_) => print('Alert button set to false after sending notifications'))
+              .catchError((error) => print('Error setting alert button to false: $error'));
+        }).catchError((error) => print("Error sending alert notification: $error"));
+      }
+    });
+  }
+  //constantly checks the remainingbalance
+  Future<void> checkRemainingStocksPerDenomination() async {
+    DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName)
+        .child('denominations');
+
+    stocksPerDenominationRef.onValue.listen((event) {
+      if(event.snapshot.value != null && event.snapshot.value is Map) {
+        Map<dynamic, dynamic> denominationsData = event.snapshot.value as Map<dynamic, dynamic>;
+
+        Map<String, int> denominationsStock = {
+          '1000': denominationsData['1000'] ?? 0, // Default to 0 if data is null
+          '100': denominationsData['100'] ?? 0,
+          '20': denominationsData['20'] ?? 0,
+          '5': denominationsData['5'] ?? 0,
+          '1': denominationsData['1'] ?? 0,
+        };
+
+        // Now you can check the stock levels and trigger notifications or take other actions
+        if (denominationsStock['1000']! < 3000) {
+          sendLowDenominationNotification(userName, kioskName, '1000', '');
+        }
+        if (denominationsStock['100']! < 500) {
+          sendLowDenominationNotification(userName, kioskName, '100', '');
+        }
+        if (denominationsStock['20']! < 100) {
+          sendLowDenominationNotification(userName, kioskName, '20', '');
+        }
+        if (denominationsStock['5']! < 50) {
+          sendLowDenominationNotification(userName, kioskName, '5', '');
+        }
+        if (denominationsStock['1']! < 20) {
+          sendLowDenominationNotification(userName, kioskName, '1', '');
+        }
+
+      }
+    });
+  }
+
+  Future<void> sendLowDenominationNotification(String userName, String kioskName, String denomination, String message) async {
+    String dateAndTime = await getTimeStamp();
+    DatabaseReference denominationRef = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('notifications')
+        .child(dateAndTime);
+    denominationRef.set(
+        {
+          'message': 'Kiosk $kioskName has low on $denomination peso stocks. $message',
+          'isRead': false
+        }
+    );
+  }*/
+
 
 
 }
