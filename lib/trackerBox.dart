@@ -74,7 +74,6 @@ class _TrackerBoxState extends State<TrackerBox> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userName');
   }
-
   Future<void> _deleteAndShowSnackBar(String kioskName) async {
     // Delete the widget
     widget.onDelete();
@@ -171,7 +170,6 @@ class _TrackerBoxState extends State<TrackerBox> {
     await AUDRateToday();
     await KRWRateToday();
   }
-
   Future<String> getTimeStamp() async {
     var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
 
@@ -206,15 +204,17 @@ class _TrackerBoxState extends State<TrackerBox> {
         sendAlertNotification.set({
           'message': 'the alert button in ${widget.boxName} has been pressed!',
           'isRead': false
-        }).then((_) {
+        });
+            /*.then((_) {
           DatabaseReference returnTheAlertIntoFalse = FirebaseDatabase.instance.ref('alertButton');
           returnTheAlertIntoFalse.set(false)
               .then((_) => print('Alert button set to false after sending notifications'))
               .catchError((error) => print('Error setting alert button to false: $error'));
-        }).catchError((error) => print("Error sending alert notification: $error"));
+        }).catchError((error) => print("Error sending alert notification: $error"));*/
       }
     });
   }
+
   Future<void> checkRemainingStocksPerDenomination() async {
     DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
         .child('owners_collection')
@@ -238,9 +238,17 @@ class _TrackerBoxState extends State<TrackerBox> {
         // Now you can check the stock levels and trigger notifications or take other actions
         int? parsedValue1000 = int.tryParse(denominationsStock['1000'].toString());
         if (parsedValue1000 != null && parsedValue1000 < 3000) {
-          sendLowDenominationNotification(userName, widget.boxName, '1000', '');
+          // Get the reference to the specific node in Firebase where you want to update the value
+          DatabaseReference denominationRef = stocksPerDenominationRef.child('1000');
+
+          // Update the value in Firebase
+          denominationRef.update({'stock': '9999'}).then((_) {
+            print('Stock value updated successfully');
+          }).catchError((error) {
+            print('Failed to update stock value: $error');
+          });
         }
-        int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
+        /*int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
         if (parsedValue100 != null && parsedValue100 < 500) {
           sendLowDenominationNotification(userName, widget.boxName, '100', '');
         }
@@ -256,6 +264,7 @@ class _TrackerBoxState extends State<TrackerBox> {
         if (parsedValue1 != null && parsedValue1 < 20) {
           sendLowDenominationNotification(userName, widget.boxName, '1', '');
         }
+         */
 
       }
     });
@@ -274,6 +283,7 @@ class _TrackerBoxState extends State<TrackerBox> {
         }
     );
   }
+
 
 
   @override

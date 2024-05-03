@@ -125,6 +125,19 @@ class _AlertsState extends State<Alerts> {
         .child('notifications');
 
     try {
+      /*DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+
+        kioskMap.forEach((key, value) {
+          if (value is Map<dynamic, dynamic>) {
+            dynamic isRead = value['isRead'];
+            if (isRead == true) {
+              kiosksRef.child(key).update({'isRead': true});
+            }
+          }
+        });
+      }*/
       DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
       if (snapshot.value != null && snapshot.value is Map) {
         Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
@@ -133,7 +146,7 @@ class _AlertsState extends State<Alerts> {
           if (value is Map<dynamic, dynamic>) {
             dynamic isRead = value['isRead'];
             if (isRead == false) {
-              kiosksRef.child(key).update({'isRead': true});
+              kiosksRef.child(key).remove();
             }
           }
         });
