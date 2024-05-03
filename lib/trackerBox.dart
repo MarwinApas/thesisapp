@@ -5,6 +5,9 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'dart:convert';
+//import 'package:flutter/services.dart' show rootBundle;
 
 class TrackerBox extends StatefulWidget {
   final String boxName;
@@ -18,6 +21,7 @@ class TrackerBox extends StatefulWidget {
 }
 
 class _TrackerBoxState extends State<TrackerBox> {
+  //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _expanded = false;
   late String userName; // Define userKey variable
   double usdRate = 0.0;
@@ -35,7 +39,36 @@ class _TrackerBoxState extends State<TrackerBox> {
     });
     getAlertKioskFlag();
     checkRemainingStocksPerDenomination();
+    //fetchData();
+    //readSecretKey();
   }
+
+  /*Future<void> readSecretKey() async {
+    try {
+      // Load the secret key file
+      String secretKeyContents = await rootBundle.loadString('assets/privkey.json');
+      Map<String, dynamic> secretKeyData = jsonDecode(secretKeyContents);
+      String apiKey = secretKeyData['api_key'];
+      String authDomain = secretKeyData['auth_domain'];
+
+    } catch (e) {
+      print('Error loading secret key: $e');
+      // Handle the error as needed
+    }
+  }
+
+  void fetchData() async {
+    QuerySnapshot querySnapshot = await _firestore.collection('clients_collection').get();
+    List<DocumentSnapshot> documents = querySnapshot.docs;
+    for (var document in documents) {
+      // Cast document data to Map<String, dynamic>
+      Map<String, dynamic> dataMap = document.data() as Map<String, dynamic>;
+      // Get all keys of the document
+      List<String> keys = dataMap.keys.toList();
+      // Print all keys
+      print('Keys for document ${document.id}: $keys');
+    }
+  }*/
 
   Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -146,7 +179,6 @@ class _TrackerBoxState extends State<TrackerBox> {
     String formattedDate = formatter.format(dateTime);
     return formattedDate;
   }
-
   Future<void> getAlertKioskFlag() async {
     String dateAndTime = await getTimeStamp();
     DatabaseReference alertButtonState = FirebaseDatabase.instance.ref('alertButton');
@@ -183,7 +215,6 @@ class _TrackerBoxState extends State<TrackerBox> {
       }
     });
   }
-  //constantly checks the remainingbalance
   Future<void> checkRemainingStocksPerDenomination() async {
     DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
         .child('owners_collection')
@@ -197,34 +228,38 @@ class _TrackerBoxState extends State<TrackerBox> {
         Map<dynamic, dynamic> denominationsData = event.snapshot.value as Map<dynamic, dynamic>;
 
         Map<String, int> denominationsStock = {
-          '1000': denominationsData['1000'] ?? 0, // Default to 0 if data is null
-          '100': denominationsData['100'] ?? 0,
-          '20': denominationsData['20'] ?? 0,
-          '5': denominationsData['5'] ?? 0,
-          '1': denominationsData['1'] ?? 0,
+          '1000': int.tryParse(denominationsData['1000'] ?? '0') ?? 0,
+          '100': int.tryParse(denominationsData['100'] ?? '0') ?? 0,
+          '20': int.tryParse(denominationsData['20'] ?? '0') ?? 0,
+          '5': int.tryParse(denominationsData['5'] ?? '0') ?? 0,
+          '1': int.tryParse(denominationsData['1'] ?? '0') ?? 0,
         };
 
         // Now you can check the stock levels and trigger notifications or take other actions
-        if (denominationsStock['1000']! < 3000) {
+        int? parsedValue1000 = int.tryParse(denominationsStock['1000'].toString());
+        if (parsedValue1000 != null && parsedValue1000 < 3000) {
           sendLowDenominationNotification(userName, widget.boxName, '1000', '');
         }
-        if (denominationsStock['100']! < 500) {
+        int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
+        if (parsedValue100 != null && parsedValue100 < 500) {
           sendLowDenominationNotification(userName, widget.boxName, '100', '');
         }
-        if (denominationsStock['20']! < 100) {
+        int? parsedValue20 = int.tryParse(denominationsStock['20'].toString());
+        if (parsedValue20 != null && parsedValue20 < 140) {
           sendLowDenominationNotification(userName, widget.boxName, '20', '');
         }
-        if (denominationsStock['5']! < 50) {
+        int? parsedValue5 = int.tryParse(denominationsStock['5'].toString());
+        if (parsedValue5 != null && parsedValue5 < 50) {
           sendLowDenominationNotification(userName, widget.boxName, '5', '');
         }
-        if (denominationsStock['1']! < 20) {
+        int? parsedValue1 = int.tryParse(denominationsStock['1'].toString());
+        if (parsedValue1 != null && parsedValue1 < 20) {
           sendLowDenominationNotification(userName, widget.boxName, '1', '');
         }
 
       }
     });
   }
-
   Future<void> sendLowDenominationNotification(String userName, String kioskName, String denomination, String message) async {
     String dateAndTime = await getTimeStamp();
     DatabaseReference denominationRef = FirebaseDatabase.instance.ref()
@@ -234,7 +269,7 @@ class _TrackerBoxState extends State<TrackerBox> {
         .child(dateAndTime);
     denominationRef.set(
         {
-          'message': 'Kiosk $kioskName has low on $denomination peso stocks. $message',
+          'message': 'Kiosk ${widget.boxName} has low on $denomination peso stocks. $message',
           'isRead': false
         }
     );

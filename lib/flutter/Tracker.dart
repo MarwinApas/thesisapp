@@ -7,7 +7,6 @@ import 'package:thesis_app/trackerBox.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // for other locales
 import 'package:thesis_app/SQLite/database_helper.dart';
 
 
@@ -25,6 +24,8 @@ class _TrackerState extends State<Tracker> {
   List<String> _trackerBoxes = [];
   late String userName;
   String kioskName = '';
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -401,6 +402,7 @@ class _TrackerState extends State<Tracker> {
     //checkRemainingStocksPerDenomination();
   }
 
+
   Future<void> _fetchKioskNames() async {
     try {
       String username = await GetUserName();
@@ -585,7 +587,7 @@ class _TrackerState extends State<Tracker> {
             .child('notifications')
             .child(dateAndTime);
         sendAlertNotification.set({
-          'message': 'the alert button${kioskName} has been pressed!',
+          'message': 'the alert button $kioskName has been pressed!',
           'isRead': false
         }).then((_) {
           DatabaseReference returnTheAlertIntoFalse = FirebaseDatabase.instance.ref('alertButton');
@@ -596,6 +598,7 @@ class _TrackerState extends State<Tracker> {
       }
     });
   }
+
   //constantly checks the remainingbalance
   Future<void> checkRemainingStocksPerDenomination() async {
     DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
@@ -610,34 +613,38 @@ class _TrackerState extends State<Tracker> {
         Map<dynamic, dynamic> denominationsData = event.snapshot.value as Map<dynamic, dynamic>;
 
         Map<String, int> denominationsStock = {
-          '1000': denominationsData['1000'] ?? 0, // Default to 0 if data is null
-          '100': denominationsData['100'] ?? 0,
-          '20': denominationsData['20'] ?? 0,
-          '5': denominationsData['5'] ?? 0,
-          '1': denominationsData['1'] ?? 0,
+          '1000': int.tryParse(denominationsData['1000'] ?? '0') ?? 0,
+          '100': int.tryParse(denominationsData['100'] ?? '0') ?? 0,
+          '20': int.tryParse(denominationsData['20'] ?? '0') ?? 0,
+          '5': int.tryParse(denominationsData['5'] ?? '0') ?? 0,
+          '1': int.tryParse(denominationsData['1'] ?? '0') ?? 0,
         };
 
         // Now you can check the stock levels and trigger notifications or take other actions
-        if (denominationsStock['1000']! < 3000) {
+        int? parsedValue1000 = int.tryParse(denominationsStock['1000'].toString());
+        if (parsedValue1000 != null && parsedValue1000 < 3000) {
           sendLowDenominationNotification(userName, kioskName, '1000', '');
         }
-        if (denominationsStock['100']! < 500) {
+        int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
+        if (parsedValue100 != null && parsedValue100 < 500) {
           sendLowDenominationNotification(userName, kioskName, '100', '');
         }
-        if (denominationsStock['20']! < 100) {
+        int? parsedValue20 = int.tryParse(denominationsStock['20'].toString());
+        if (parsedValue20 != null && parsedValue20 < 140) {
           sendLowDenominationNotification(userName, kioskName, '20', '');
         }
-        if (denominationsStock['5']! < 50) {
+        int? parsedValue5 = int.tryParse(denominationsStock['5'].toString());
+        if (parsedValue5 != null && parsedValue5 < 50) {
           sendLowDenominationNotification(userName, kioskName, '5', '');
         }
-        if (denominationsStock['1']! < 20) {
+        int? parsedValue1 = int.tryParse(denominationsStock['1'].toString());
+        if (parsedValue1 != null && parsedValue1 < 20) {
           sendLowDenominationNotification(userName, kioskName, '1', '');
         }
 
       }
     });
   }
-
   Future<void> sendLowDenominationNotification(String userName, String kioskName, String denomination, String message) async {
     String dateAndTime = await getTimeStamp();
     DatabaseReference denominationRef = FirebaseDatabase.instance.ref()
