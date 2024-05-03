@@ -27,6 +27,7 @@ class _TrackerBoxState extends State<TrackerBox> {
   double usdRate = 0.0;
   double audRate = 0.0;
   double krwRate = 0.0;
+  double feeRate = 0.0;
 
   @override
   void initState() {
@@ -165,10 +166,38 @@ class _TrackerBoxState extends State<TrackerBox> {
 
     return completer.future;
   }
+  Future<double> FEERateToday() async {
+    DatabaseReference usdRateRef = FirebaseDatabase.instance
+        .ref()
+        .child('currency_rate')
+        .child('FEE_rate');
+
+    Completer<double> completer = Completer<double>();
+
+    usdRateRef.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        double rate = double.parse(event.snapshot.value.toString());
+        setState(() {
+          feeRate = rate;
+        });
+        completer.complete(rate); // Resolve the Future with the fetched rate
+      } else {
+        print("USD rate snapshot does not exist");
+        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+      }
+    }, onError: (error) {
+      print("Error fetching USD rate: $error");
+      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+    });
+
+    return completer.future;
+  }
+
   Future<void> fetchCurrencyRates() async {
     await fetchUSDRate();
     await AUDRateToday();
     await KRWRateToday();
+    await FEERateToday();
   }
   Future<String> getTimeStamp() async {
     var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
@@ -435,7 +464,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    String selectedCurrency = 'USD'; // Default selected currency
+                                    String selectedCurrency = 'USD_rate'; // Default selected currency
                                     TextEditingController priceController = TextEditingController(); // Controller for the price input field
 
                                     return AlertDialog(
@@ -521,6 +550,29 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                         }
                                                       },
                                                     ),
+                                                    FutureBuilder<double>(
+                                                      future: FEERateToday(), // Call your fetch methods here
+                                                      builder: (context, snapshot) {
+                                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                                          return CircularProgressIndicator();
+                                                        } else if (snapshot.hasError) {
+                                                          return Text("Error: ${snapshot.error}");
+                                                        } else if (!snapshot.hasData) {
+                                                          return Text("No data available");
+                                                        } else {
+                                                          // Use snapshot.data to access the fetched rate
+                                                          double krwRate = snapshot.data!;
+                                                          return Text(
+                                                            "FEE: ${krwRate.toStringAsFixed(3)} PESOS",
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Colors.black,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
                                                   ],
                                                 );
                                               }
@@ -528,7 +580,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                           ),
                                           DropdownButtonFormField<String>(
                                             value: selectedCurrency,
-                                            items: ['USD', 'AUD', 'KRW'].map((String currency) {
+                                            items: ['USD_rate', 'AUD_rate', 'KRW_rate','FEE_rate'].map((String currency) {
                                               return DropdownMenuItem<String>(
                                                 value: currency,
                                                 child: Text(currency),
@@ -564,11 +616,11 @@ class _TrackerBoxState extends State<TrackerBox> {
                                           onPressed: () async {
                                             // Get the selected currency and price here
                                             String currency = selectedCurrency;
-                                            double price = double.tryParse(priceController.text) ?? 0.0;
+                                            String price = priceController.text ?? "0.0";
 
                                             DatabaseReference currencyPriceRef = FirebaseDatabase.instance
                                                 .ref()
-                                                .child('currency_price')
+                                                .child('currency_rate')
                                                 .child(currency);
 
                                             currencyPriceRef.set(price).then((_) {
