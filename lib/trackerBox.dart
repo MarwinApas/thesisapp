@@ -40,43 +40,17 @@ class _TrackerBoxState extends State<TrackerBox> {
       });
     });
     getAlertKioskFlag();
-    checkRemainingStocksPerDenomination();
+    //checkRemainingStocksPerDenomination();
     //fetchData();
     //readSecretKey();
+    //check1000Denomination();
   }
 
-  /*Future<void> readSecretKey() async {
-    try {
-      // Load the secret key file
-      String secretKeyContents = await rootBundle.loadString('assets/privkey.json');
-      Map<String, dynamic> secretKeyData = jsonDecode(secretKeyContents);
-      String apiKey = secretKeyData['api_key'];
-      String authDomain = secretKeyData['auth_domain'];
-
-    } catch (e) {
-      print('Error loading secret key: $e');
-      // Handle the error as needed
-    }
-  }
-
-  void fetchData() async {
-    QuerySnapshot querySnapshot = await _firestore.collection('clients_collection').get();
-    List<DocumentSnapshot> documents = querySnapshot.docs;
-    for (var document in documents) {
-      // Cast document data to Map<String, dynamic>
-      Map<String, dynamic> dataMap = document.data() as Map<String, dynamic>;
-      // Get all keys of the document
-      List<String> keys = dataMap.keys.toList();
-      // Print all keys
-      print('Keys for document ${document.id}: $keys');
-    }
-  }*/
 
   Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userName');
   }
-
   Future<void> _deleteAndShowSnackBar(String kioskName) async {
     // Delete the widget
     widget.onDelete();
@@ -195,14 +169,12 @@ class _TrackerBoxState extends State<TrackerBox> {
 
     return completer.future;
   }
-
   Future<void> fetchCurrencyRates() async {
     await fetchUSDRate();
     await AUDRateToday();
     await KRWRateToday();
     await FEERateToday();
   }
-
   Future<String> getTimeStamp() async {
     var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
 
@@ -246,6 +218,51 @@ class _TrackerBoxState extends State<TrackerBox> {
       }
     });
   }
+
+  /*Future<void> check1000Denomination() async {
+    DatabaseReference thouRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(widget.boxName)
+        .child('denominations')
+        .child('1000');
+
+    thouRef.once().then((DatabaseEvent event) {
+      if (event.snapshot.value != null) {
+        int? denominationValue = int.tryParse(event.snapshot.value.toString());
+        if (denominationValue != null) {
+          print('Denomination Value: $denominationValue');
+          if (denominationValue < 3000) {
+            getTimeStamp().then((timestamp) async {
+              DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                  .ref()
+                  .child('owners_collection')
+                  .child(userName)
+                  .child('notifications')
+                  .child(timestamp);
+              await sendThouNotif.set({
+                "message": "The ${widget.boxName} is low on 1000 pesos",
+                "isRead": false
+              });
+              print('Notification set successfully.');
+            });
+          } else {
+            print('Denomination value is not greater than 3000.');
+          }
+        } else {
+          print('Error parsing denomination value.');
+        }
+      } else {
+        print('Denomination value is null.');
+      }
+    }).catchError((error) {
+      print("Error fetching data: $error");
+    });
+  }
+
+
   Future<void> checkRemainingStocksPerDenomination() async {
     DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
         .child('owners_collection')
@@ -304,7 +321,7 @@ class _TrackerBoxState extends State<TrackerBox> {
           'isRead': false
         }
     );
-  }
+  }*/
 
 
   @override
@@ -376,6 +393,81 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 } else {
                                   DataSnapshot dataSnapshot = snapshot.data!.snapshot;
                                   Map<dynamic, dynamic> denominationsData = dataSnapshot.value as Map<dynamic, dynamic>;
+                                  if ((int.tryParse(denominationsData['1000']) ?? 0) < 3000) {
+                                    getTimeStamp().then((timestamp) async {
+                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                          .ref()
+                                          .child('owners_collection')
+                                          .child(userName)
+                                          .child('notifications')
+                                          .child(timestamp);
+                                      await sendThouNotif.set({
+                                        "message": "The ${widget.boxName} is low on 1000 pesos",
+                                        "isRead": false
+                                      });
+                                      print('Notification set successfully.');
+                                    });
+                                  }
+                                  else if ((int.tryParse(denominationsData['100']) ?? 0) < 500) {
+                                    getTimeStamp().then((timestamp) async {
+                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                          .ref()
+                                          .child('owners_collection')
+                                          .child(userName)
+                                          .child('notifications')
+                                          .child(timestamp);
+                                      await sendThouNotif.set({
+                                        "message": "The ${widget.boxName} is low on 1000 pesos",
+                                        "isRead": false
+                                      });
+                                      print('Notification set successfully.');
+                                    });
+                                  }
+                                  else if ((int.tryParse(denominationsData['20']) ?? 0) < 100) {
+                                    getTimeStamp().then((timestamp) async {
+                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                          .ref()
+                                          .child('owners_collection')
+                                          .child(userName)
+                                          .child('notifications')
+                                          .child(timestamp);
+                                      await sendThouNotif.set({
+                                        "message": "The ${widget.boxName} is low on 100 pesos",
+                                        "isRead": false
+                                      });
+                                      print('Notification set successfully.');
+                                    });
+                                  }
+                                  else if ((int.tryParse(denominationsData['5']) ?? 0) < 50) {
+                                    getTimeStamp().then((timestamp) async {
+                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                          .ref()
+                                          .child('owners_collection')
+                                          .child(userName)
+                                          .child('notifications')
+                                          .child(timestamp);
+                                      await sendThouNotif.set({
+                                        "message": "The ${widget.boxName} is low on 5 pesos",
+                                        "isRead": false
+                                      });
+                                      print('Notification set successfully.');
+                                    });
+                                  }
+                                  else if ((int.tryParse(denominationsData['1']) ?? 0) < 10) {
+                                    getTimeStamp().then((timestamp) async {
+                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                          .ref()
+                                          .child('owners_collection')
+                                          .child(userName)
+                                          .child('notifications')
+                                          .child(timestamp);
+                                      await sendThouNotif.set({
+                                        "message": "The ${widget.boxName} is low on 1 pesos",
+                                        "isRead": false
+                                      });
+                                      print('Notification set successfully.');
+                                    });
+                                  }
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [

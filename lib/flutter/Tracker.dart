@@ -22,8 +22,52 @@ class Tracker extends StatefulWidget {
 
 class _TrackerState extends State<Tracker> {
   List<String> _trackerBoxes = [];
+  late String userName;
   String kioskName = '';
 
+  /*Future<void> check1000Denomination(String kioskName) async {
+    DatabaseReference thouRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosks')
+        .child(kioskName)
+        .child('denominations')
+        .child('1000');
+
+    thouRef.once().then((DatabaseEvent event) {
+      if (event.snapshot.value != null) {
+        int? denominationValue = int.tryParse(event.snapshot.value.toString());
+        if (denominationValue != null) {
+          print('Denomination Value: $denominationValue');
+          if (denominationValue < 3000) {
+            getTimeStamp().then((timestamp) async {
+              print('Timestamp: $timestamp');
+              DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                  .ref()
+                  .child('owners_collection')
+                  .child(userName)
+                  .child('notifications')
+                  .child(timestamp);
+              await sendThouNotif.set({
+                "message": "The $kioskName is low on 1000 pesos",
+                "isRead": false
+              });
+              print('Notification set successfully.');
+            });
+          } else {
+            print('Denomination value is not greater than 3000.');
+          }
+        } else {
+          print('Error parsing denomination value.');
+        }
+      } else {
+        print('Denomination value is null.');
+      }
+    }).catchError((error) {
+      print("Error fetching data: $error");
+    });
+  }*/
 
 
   @override
@@ -88,7 +132,7 @@ class _TrackerState extends State<Tracker> {
                                 TextButton(
                                   onPressed: () async {
                                     Navigator.of(context).pop(true);
-                                    //await _deleteKiosk(widget.userName!,kioskName);
+                                    //await _deleteKiosk(userName,kioskName);
                                   },
                                   child: Text('Yes'),
                                 ),
@@ -396,6 +440,11 @@ class _TrackerState extends State<Tracker> {
   void initState() {
     super.initState();
     _fetchKioskNames();
+    GetuserName().then((username) {
+      setState(() {
+        userName = username ?? '';
+      });
+    });
     //checkRemainingStocksPerDenomination(userName, kioskName);
     //getAlertKioskFlag();
     //checkRemainingStocksPerDenomination();
