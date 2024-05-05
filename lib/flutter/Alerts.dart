@@ -196,15 +196,39 @@ class _AlertsState extends State<Alerts> {
                           fontSize: 16,
                         ),
                       ),
+
                       GestureDetector(
                         onTap: () async {
-
                           String? userName = await fetchUserName(); // Fetch the userName
                           if (userName != null) {
-                            List<String?> updatedNotifications = await updateNotificationsFromUser(userName);
-                            setState(() {
-                              notifications.addAll(updatedNotifications);
-                            });
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text("Delete Notifications"),
+                                  content: Text("Are you sure you want to delete all notifications?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () async {
+                                        List<String?> updatedNotifications = await updateNotificationsFromUser(userName);
+                                        setState(() {
+                                          notifications.clear(); // Clear existing notifications
+                                          notifications.addAll(updatedNotifications);
+                                        });
+                                        Navigator.of(context).pop(); // Close the alert dialog
+                                      },
+                                      child: Text("Yes"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(); // Close the alert dialog
+                                      },
+                                      child: Text("No"),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
                           }
                         },
                         child: Icon(
@@ -212,6 +236,7 @@ class _AlertsState extends State<Alerts> {
                           color: Colors.red,
                         ),
                       ),
+
 
                     ],
                   ),

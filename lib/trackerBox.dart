@@ -335,7 +335,7 @@ class _TrackerBoxState extends State<TrackerBox> {
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        height: _expanded ? 580 : 80, // Set expanded and default heights
+        height: _expanded ? 450 : 80, // Set expanded and default heights
         child: Slidable(
           actionPane: SlidableDrawerActionPane(),
           child: Padding(
@@ -515,32 +515,28 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 }
                               },
                             ),
-                            SizedBox(height: 14),
-                            Text(
-                              "TRANSACTION HISTORY",
-                              style: TextStyle(
-                                fontSize: 18, // Set the font size
-                                fontWeight: FontWeight.bold, // Set the font weight to bold
-                                color: Colors.black, // Set the text color
-                              ),
-                            ),
-                            SizedBox(height: 7),
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20), // Set border radius to 20 pixels
-                                border: Border.all(width: 2), // Set border width to 2 pixels
-                              ),
-                              padding: EdgeInsets.all(2.0), // Add padding around the ListView
-                              height: 230, // Set a specific height for the Container
-                              width: 290,
-                              child: ListView.builder(
-                                itemCount: 7, // Example item count, replace with your actual data count
-                                itemBuilder: (BuildContext context, int index) {
-                                  return ListTile(
-                                    title: Text('A new transaction on kiosk $index'), // Example text for each list item
-                                  );
-                                },
-                              ),
+                            SizedBox(height: 50),
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text("Transaction History"),
+                                      content: Text("Here is your transaction history."),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop(); // Close the alert dialog
+                                          },
+                                          child: Text("Close"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Text("TAP TO SEE THE TRANSACTION HISTORY"),
                             ),
                             SizedBox(height: 20),
                             ElevatedButton(
