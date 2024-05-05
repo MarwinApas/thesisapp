@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:thesis_app/JsonModels/users.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/WelcomePage.dart';
+import 'package:thesis_app/changePasswordPage.dart';
+import 'package:thesis_app/firebase_auth_implemention/firebase_auth_services.dart';
 import 'package:thesis_app/forgotPasswordPage.dart';
 import 'package:thesis_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,15 +17,17 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final FirebaseAuthService _auth = FirebaseAuthService();
   String? loggedInUsername;
-  final userName = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController userPasswordController = TextEditingController();
   final userPassword = TextEditingController();
   final db = DatabaseHelper();
 
   bool isLoginTrue = false;
   bool isVisible = true;
 
-  Future<void> login() async {
+  /*Future<void> login() async {
     // Check if the username exists
     bool usernameExists = await db.checkUsernameExists(userName.text);
 
@@ -74,7 +79,72 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     }
+  }*/
+
+
+  //loginacc
+  void _signIn() async {
+    String email = emailController.text;
+    String password = userPasswordController.text;
+
+    try {
+      User? user = await _auth.signInWithEmailAndPassword(email, password);
+      if (user != null) {
+        String userName = email.substring(0,email.indexOf('@'));
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('userName', userName); // Save the username for realtime database
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Success"),
+              content: Text("Login successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomePage()));
+                  },
+                  child: Text(""),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => WelcomePage()));
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        throw Exception("Login failed unexpectedly.");
+      }
+    } catch (e) {
+      // Handle registration errors
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text("Incorrect username or password. please try again."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
+
+  /*void _signIn() async{
+    String email = emailController.text;
+    String password = userPasswordController.text;
+  }*/
 
   @override
   Widget build(BuildContext context) { // Implement build method
@@ -151,10 +221,10 @@ class _LoginPageState extends State<LoginPage> {
                           width: 300, // Adjust the width as needed
                           alignment: Alignment.topCenter, // Adjust the alignment
                           child: TextFormField(
-                            controller: userName,
+                            controller: emailController,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.person),
-                              hintText: "Enter Username",
+                              hintText: "Enter Email address",
                               fillColor: Colors.white,
                               filled: true,
                               border: OutlineInputBorder(
@@ -164,7 +234,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Username is required';
+                                return 'Email is required';
                               }
                               return null;
                             },
@@ -174,7 +244,7 @@ class _LoginPageState extends State<LoginPage> {
                         Container(
                           width: 300, // Adjust the width as needed
                           child: TextFormField(
-                            controller: userPassword,
+                            controller: userPasswordController,
                             obscureText: isVisible,
                             decoration: InputDecoration(
                               prefixIcon: Icon(Icons.lock),
@@ -204,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         SizedBox(height: 10),
                         TextButton(
-                          onPressed: login,
+                          onPressed: _signIn,
 
                           child: Text(
                             "Login",
@@ -231,7 +301,7 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => ForgotPasswordPage(),
+                                builder: (context) => changePasswordPage(),
                               ),
                             );
                           },
@@ -256,4 +326,7 @@ class _LoginPageState extends State<LoginPage> {
     ),
     );
   }
+
 }
+
+

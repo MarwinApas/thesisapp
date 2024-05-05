@@ -11,10 +11,10 @@ import 'package:thesis_app/SQLite/database_helper.dart';
 
 
 class Tracker extends StatefulWidget {
-  final String? userName;
 
 
-  const Tracker({Key? key, this.userName}) : super(key: key);
+
+  const Tracker({Key? key}) : super(key: key);
 
   @override
   _TrackerState createState() => _TrackerState();
@@ -22,7 +22,6 @@ class Tracker extends StatefulWidget {
 
 class _TrackerState extends State<Tracker> {
   List<String> _trackerBoxes = [];
-  late String userName;
   String kioskName = '';
 
 
@@ -49,7 +48,7 @@ class _TrackerState extends State<Tracker> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
+                MaterialPageRoute(builder: (context) => WelcomePage()),
               );
             },
           ),
@@ -71,7 +70,7 @@ class _TrackerState extends State<Tracker> {
                   itemCount: _trackerBoxes.length,
                   itemBuilder: (context, index) {
                     return TrackerBox(
-                      boxName: _trackerBoxes[index], // Use kiosk name from the list
+                      boxName: _trackerBoxes[index],
                       onDelete: () async {
                         bool confirmDelete = await showDialog(
                           context: context,
@@ -121,7 +120,7 @@ class _TrackerState extends State<Tracker> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
+                          MaterialPageRoute(builder: (context) => WelcomePage()),
                         );
                       },
                       child: Container(
@@ -223,7 +222,7 @@ class _TrackerState extends State<Tracker> {
                         Navigator.push(
                           context,
                           PageRouteBuilder(
-                            pageBuilder: (_, __, ___) => Settings(userName: widget.userName),
+                            pageBuilder: (_, __, ___) => Settings(),
                             transitionsBuilder: (_, animation, __, child) {
                               return FadeTransition(
                                 opacity: animation,
@@ -405,10 +404,9 @@ class _TrackerState extends State<Tracker> {
 
   Future<void> _fetchKioskNames() async {
     try {
-      String username = await GetUserName();
-      List<String> kioskNames = await getKioskNamesFromUser(username);
+      String userName = await GetuserName();
+      List<String> kioskNames = await getKioskNamesFromUser(userName);
       setState(() {
-        userName = username ?? '';
         _trackerBoxes.addAll(kioskNames);
       });
     } catch (error) {
@@ -416,14 +414,14 @@ class _TrackerState extends State<Tracker> {
     }
   }
 
-  Future<String> GetUserName() async {
+  Future<String> GetuserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userName')!;
   }
 
   void _updateTrackerBoxes(userName) async {
     if (userName! != null) {
-      List<String> kioskNames = await getKioskNamesFromUser(widget.userName!);
+      List<String> kioskNames = await getKioskNamesFromUser(userName);
       setState(() {
         _trackerBoxes = kioskNames;
       });

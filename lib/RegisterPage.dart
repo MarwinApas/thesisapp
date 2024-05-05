@@ -1,9 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thesis_app/JsonModels/users.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/main.dart';
 import 'package:firebase_database/firebase_database.dart';
-
+import 'package:thesis_app/firebase_auth_implemention/firebase_auth_services.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -13,16 +16,19 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+
+  final FirebaseAuthService _auth = FirebaseAuthService();
+
   String? selectedQuestion;
   final db = DatabaseHelper();
-  final firstName = TextEditingController();
-  final lastName = TextEditingController();
-  final userName = TextEditingController();
-  final userPassword = TextEditingController();
-  final confirmUserPassword = TextEditingController();
-  final userVerificationQuestion = TextEditingController();
-  final userVerificationAnswer = TextEditingController();
-  final userKey = TextEditingController();
+  TextEditingController fullNameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController userNameController = TextEditingController();
+  TextEditingController userPasswordController = TextEditingController();
+  TextEditingController confirmUserPasswordController = TextEditingController();
+  TextEditingController userVerificationQuestion = TextEditingController();
+  TextEditingController userVerificationAnswer = TextEditingController();
+  //TextEditingController userKey = TextEditingController();
 
   //for firestore
   /*Future<void> addUserDetails(String firstName, String lastName) async {
@@ -32,26 +38,105 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }*/
 
-
-
-  //for realtime database
-  Future<String> addUserDetails(String userName,String firstName, String lastName) async {
-    DatabaseReference reference = FirebaseDatabase.instance.ref()
-        .child('owners_collection')
-        .child(userName)
-        .child('user_data');
-    //String userKey = reference.push().key!; // Generate unique key
-    await reference.set({
-      'userName': userName,
-      'firstName': firstName,
-      'lastName': lastName,
-    });
-    return userName; // Return the generated key
+  void dispose(){
+    fullNameController.dispose();
+    emailController.dispose();
+    userNameController.dispose();
+    userPasswordController.dispose();
+    confirmUserPasswordController.dispose();
+    userVerificationQuestion.dispose();
+    userVerificationAnswer.dispose();
+    //userKey.dispose();
+    super.dispose();
   }
 
 
 
-  Future<void> registerUser() async {
+
+  //registerAcc
+  void _signUp() async {
+    String userName = userNameController.text;
+    String email = emailController.text;
+    String password = userPasswordController.text;
+    String fullName = fullNameController.text;
+
+    try {
+      User? user = await _auth.signUpWithEmailAndPassword(email, password);
+      if (user != null) {
+        // Registration successful
+        String userEmail = email.substring(0,email.indexOf('@'));
+        addUserDetails(userEmail, email, fullName);
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Success"),
+              content: Text("Registration successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context, true);
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        throw Exception("Registration failed unexpectedly.");
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text("Registration unsuccessful. Please try again."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the dialog
+                },
+                child: Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  //for realtime database
+  Future<void> addUserDetails(String userEmail,String email, String fullName) async {
+    DatabaseReference reference = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userEmail)
+        .child('user_data');
+    await reference.set({
+      'userName': userEmail,
+      'email': email,
+      'fullName': fullName,
+    });
+
+  }
+
+  //for settings
+
+
+  //for firestore database
+ /* Future<void> addUserDetailsFireStore(String userName,String email, String fullName) async {
+    final firestore = FirebaseFirestore.instance;
+
+    await firestore.collection("owners_collection").doc("1").set({
+      "Username": userName,
+      "Email": email,
+      "Fullname":fullName
+    });
+  }*/
+
+  /*Future<void> registerUser() async {
     // Check if the username already exists in the database
 
     bool usernameExists = await db.checkUsernameExists(userName.text);
@@ -132,7 +217,7 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     }
-  }
+  }*/
 
   //final formKey = GlobalKey<FormState>();
   bool newPasswordIsVisible = true, confirmPasswordIsVisible = true;
@@ -160,7 +245,7 @@ class _RegisterPageState extends State<RegisterPage> {
               fit: BoxFit.scaleDown,
                 child: Container(
                   width: 360,
-                  height: 600,
+                  height: 450,
                   decoration: BoxDecoration(
                     color: Color(0x86262626),
                     borderRadius: BorderRadius.circular(30),
@@ -177,9 +262,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: firstName,
+                              controller: fullNameController,
                               decoration: InputDecoration(
-                                hintText: "First Name",
+                                hintText: "Enter Full name",
                                 fillColor: Colors.white,
                                 filled: true,
                                 border: OutlineInputBorder(
@@ -200,9 +285,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: lastName,
+                              controller: emailController,
                               decoration: InputDecoration(
-                                hintText: "Last Name",
+                                hintText: "Email address",
                                 fillColor: Colors.white,
                                 filled: true,
                                 border: OutlineInputBorder(
@@ -217,31 +302,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: userName,
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(Icons.person),
-                                hintText: "New Username",
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'A username is required';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Container(
-                            width: 300,
-                            alignment: Alignment.topCenter,
-                            child: TextFormField(
-                              controller: userPassword,
+                              controller: userPasswordController,
                               obscureText: newPasswordIsVisible,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock),
@@ -274,7 +335,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: confirmUserPassword,
+                              controller: confirmUserPasswordController,
                               obscureText: confirmPasswordIsVisible,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.lock),
@@ -303,7 +364,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                           SizedBox(height: 10),
-                          Container(
+                          /*Container(
                             width: 300,
                             alignment: Alignment.centerLeft,
                             child: DropdownButton<String>(
@@ -366,10 +427,10 @@ class _RegisterPageState extends State<RegisterPage> {
                               },
                             ),
                           ),
-                          SizedBox(height: 10),
+                          SizedBox(height: 10),*/
                           TextButton(
                             onPressed: () async {
-                              if (userPassword.text != confirmUserPassword.text) {
+                              if (userPasswordController.text != confirmUserPasswordController.text) {
                                 // Display error alert dialog for password mismatch
                                 showDialog(
                                   context: context,
@@ -381,7 +442,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         TextButton(
                                           onPressed: () {
                                             Navigator.pop(context); // Close the dialog
-                                            confirmUserPassword.clear(); // Clear the confirm password field
+                                            confirmUserPasswordController.clear(); // Clear the confirm password field
                                           },
                                           child: Text("OK"),
                                         ),
@@ -391,7 +452,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 );
                               } else {
                                 try {
-                                  await registerUser(); // Call the registerUser function
+                                  _signUp();
+                                  //await registerUser(); // Call the registerUser function
                                   // User registration successful, navigate back or perform any other action
                                 } catch (e) {
                                   // Display error dialog for unsuccessful registration
@@ -441,7 +503,6 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
 
-
                         ],
                       ),
                     ),
@@ -454,4 +515,5 @@ class _RegisterPageState extends State<RegisterPage> {
     ),
     );
   }
+
 }

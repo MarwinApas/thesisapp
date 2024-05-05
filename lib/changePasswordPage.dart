@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
@@ -12,6 +13,9 @@ class changePasswordPage extends StatefulWidget {
 }
 
 class _ChangePasswordPageState extends State<changePasswordPage> {
+
+  TextEditingController emailController = TextEditingController();
+  TextEditingController userPasswordController = TextEditingController();
   final userName = TextEditingController();
   final newUserPassword = TextEditingController();
 
@@ -24,7 +28,7 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
     return null;
   }
 
-  void changePassword() async {
+  /*void changePassword() async {
     String username = userName.text.trim();
     String newPassword = newUserPassword.text.trim();
 
@@ -95,6 +99,10 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
         },
       );
     }
+  }*/
+
+  Future<void> resetPassword() async{
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text.trim());
   }
 
   bool isVisible = true;
@@ -172,9 +180,9 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                             width: 300,
                             alignment: Alignment.topCenter,
                             child: TextFormField(
-                              controller: userName,
+                              controller: emailController,
                               decoration: InputDecoration(
-                                hintText: "Enter Username",
+                                hintText: "Enter Email address",
                                 fillColor: Colors.white,
                                 filled: true,
                                 border: OutlineInputBorder(
@@ -190,48 +198,32 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                               },
                             ),
                           ),
-                          SizedBox(height: 10),
-                          Container(
-                            width: 300, // Adjust the width as needed
-                            child: TextFormField(
-                              controller: newUserPassword,
-                              obscureText: isVisible,
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.lock),
-                                suffixIcon: IconButton(
-                                  onPressed: (){
-                                    setState(() {
-                                      //toggle button
-                                      isVisible = !isVisible;
-                                    });
-                                  }, icon: Icon(isVisible?Icons.visibility_off:Icons.visibility),
-                                ),
-                                hintText: "Enter new Password",
-                                fillColor: Colors.white,
-                                filled: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
                           SizedBox(height: 30),
                           TextButton(
-                            onPressed: changePassword, // Call the changePassword method
-                            child: Text(
-                              "Change Password",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
+                            onPressed: () {
+                              resetPassword().then((_) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text('Password reset email sent successfully!'),
+                                ));
+                              }).catchError((error) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text('Error: $error'),
+                                ));
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Icon(Icons.email),
+                                SizedBox(width: 10),
+                                Text(
+                                  "Reset Password",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ],
                             ),
                             style: TextButton.styleFrom(
                               backgroundColor: Color(0xE0FFFFFF),
@@ -245,6 +237,7 @@ class _ChangePasswordPageState extends State<changePasswordPage> {
                               minimumSize: Size(250, 50),
                             ),
                           ),
+
 
                           SizedBox(height: 10),
                         ],

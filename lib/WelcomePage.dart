@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
@@ -71,7 +72,7 @@ class WelcomePage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Perform logout logic here
+                        FirebaseAuth.instance.signOut();
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -230,7 +231,7 @@ class WelcomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Settings(userName: userName),
+                                  builder: (context) => Settings(),
                                 ),
                               );
                             },
@@ -283,7 +284,7 @@ class WelcomePage extends StatelessWidget {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          // Perform logout logic here
+                                          FirebaseAuth.instance.signOut();
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(

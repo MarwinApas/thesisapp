@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
 import 'package:thesis_app/flutter/Settings.dart';
+import 'package:thesis_app/main.dart';
 
 
 class settingsChangePasswordPage extends StatefulWidget {
@@ -14,6 +16,8 @@ class settingsChangePasswordPage extends StatefulWidget {
 class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
   final userName = TextEditingController();
   final newUserPassword = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController userPasswordController = TextEditingController();
 
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
@@ -24,7 +28,7 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
     return null;
   }
 
-  void changePassword() async {
+  /*void changePassword() async {
     String username = userName.text.trim(); // Get the username of the current user
     String newPassword = newUserPassword.text.trim();
     if (username.isEmpty || newPassword.isEmpty) {
@@ -94,7 +98,42 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
         },
       );
     }
+  }*/
+
+  //method to resetPassword
+  Future<void> resetPassword() async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: emailController.text.trim(),
+      );
+      // Password reset email sent successfully
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Password reset email sent successfully!'),
+        ),
+      );
+    } catch (e) {
+      // Handle specific error cases
+      String errorMessage = 'An error occurred. Please try again.';
+      if (e is FirebaseAuthException) {
+        if (e.code == 'user-not-found') {
+          errorMessage = 'No user found with this email. Please check your email address.';
+        } else {
+          errorMessage = 'Error: ${e.message}';
+        }
+      }
+      // Show error message in a SnackBar or dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+        ),
+      );
+    }
   }
+
+
+
+  /*        */
 
   bool isVisible = true;
   @override
@@ -174,9 +213,9 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
                               width: 300,
                               alignment: Alignment.topCenter,
                               child: TextFormField(
-                                controller: userName,
+                                controller: emailController,
                                 decoration: InputDecoration(
-                                  hintText: "Enter Username",
+                                  hintText: "Enter Email",
                                   fillColor: Colors.white,
                                   filled: true,
                                   border: OutlineInputBorder(
@@ -193,47 +232,21 @@ class _settingsChangePasswordPage extends State<settingsChangePasswordPage> {
                               ),
                             ),
                             SizedBox(height: 10),
-                            Container(
-                              width: 300, // Adjust the width as needed
-                              child: TextFormField(
-                                controller: newUserPassword,
-                                obscureText: isVisible,
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.lock),
-                                  suffixIcon: IconButton(
-                                    onPressed: (){
-                                      setState(() {
-                                        //toggle button
-                                        isVisible = !isVisible;
-                                      });
-                                    }, icon: Icon(isVisible?Icons.visibility_off:Icons.visibility),
-                                  ),
-                                  hintText: "Enter new Password",
-                                  fillColor: Colors.white,
-                                  filled: true,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Password is required';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            SizedBox(height: 30),
                             TextButton(
-                              onPressed: changePassword, // Call the changePassword method
-                              child: Text(
-                                "Change Password",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
+                              onPressed: resetPassword,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.email),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Change Password",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
                               ),
                               style: TextButton.styleFrom(
                                 backgroundColor: Color(0xE0FFFFFF),

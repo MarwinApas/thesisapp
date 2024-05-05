@@ -29,6 +29,7 @@ class _TrackerBoxState extends State<TrackerBox> {
   double krwRate = 0.0;
   double feeRate = 0.0;
 
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +76,7 @@ class _TrackerBoxState extends State<TrackerBox> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userName');
   }
+
   Future<void> _deleteAndShowSnackBar(String kioskName) async {
     // Delete the widget
     widget.onDelete();
@@ -166,6 +168,7 @@ class _TrackerBoxState extends State<TrackerBox> {
 
     return completer.future;
   }
+  // READ FEE RATE METHOD
   Future<double> FEERateToday() async {
     DatabaseReference usdRateRef = FirebaseDatabase.instance
         .ref()
@@ -199,6 +202,7 @@ class _TrackerBoxState extends State<TrackerBox> {
     await KRWRateToday();
     await FEERateToday();
   }
+
   Future<String> getTimeStamp() async {
     var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
 
@@ -233,8 +237,7 @@ class _TrackerBoxState extends State<TrackerBox> {
         sendAlertNotification.set({
           'message': 'the alert button in ${widget.boxName} has been pressed!',
           'isRead': false
-        });
-            /*.then((_) {
+        });/*.then((_) {
           DatabaseReference returnTheAlertIntoFalse = FirebaseDatabase.instance.ref('alertButton');
           returnTheAlertIntoFalse.set(false)
               .then((_) => print('Alert button set to false after sending notifications'))
@@ -243,7 +246,6 @@ class _TrackerBoxState extends State<TrackerBox> {
       }
     });
   }
-
   Future<void> checkRemainingStocksPerDenomination() async {
     DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
         .child('owners_collection')
@@ -267,17 +269,9 @@ class _TrackerBoxState extends State<TrackerBox> {
         // Now you can check the stock levels and trigger notifications or take other actions
         int? parsedValue1000 = int.tryParse(denominationsStock['1000'].toString());
         if (parsedValue1000 != null && parsedValue1000 < 3000) {
-          // Get the reference to the specific node in Firebase where you want to update the value
-          DatabaseReference denominationRef = stocksPerDenominationRef.child('1000');
-
-          // Update the value in Firebase
-          denominationRef.update({'stock': '9999'}).then((_) {
-            print('Stock value updated successfully');
-          }).catchError((error) {
-            print('Failed to update stock value: $error');
-          });
+          sendLowDenominationNotification(userName, widget.boxName, '1000', '');
         }
-        /*int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
+        int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
         if (parsedValue100 != null && parsedValue100 < 500) {
           sendLowDenominationNotification(userName, widget.boxName, '100', '');
         }
@@ -293,7 +287,6 @@ class _TrackerBoxState extends State<TrackerBox> {
         if (parsedValue1 != null && parsedValue1 < 20) {
           sendLowDenominationNotification(userName, widget.boxName, '1', '');
         }
-         */
 
       }
     });
@@ -312,7 +305,6 @@ class _TrackerBoxState extends State<TrackerBox> {
         }
     );
   }
-
 
 
   @override
@@ -616,7 +608,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                           onPressed: () async {
                                             // Get the selected currency and price here
                                             String currency = selectedCurrency;
-                                            String price = priceController.text ?? "0.0";
+                                            String price = priceController.text ?? '0.0';
 
                                             DatabaseReference currencyPriceRef = FirebaseDatabase.instance
                                                 .ref()

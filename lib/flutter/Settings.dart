@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thesis_app/SQLite/database_helper.dart';
@@ -6,6 +8,7 @@ import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
 import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/WelcomePage.dart';
+import 'package:thesis_app/main.dart';
 import 'package:thesis_app/settingsChangePasswordPage.dart';
 
 class Settings extends StatefulWidget {
@@ -21,50 +24,106 @@ class _SettingsState extends State<Settings> {
   String lastName = '';
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
+  TextEditingController fullNameController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchUserData();
   }
 
-  Future<void> fetchUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userName = prefs.getString('userName');
-    await DatabaseHelper().fetchUserName(userName ?? '').then((userData) {
-      if (userData != null) {
-        setState(() {
-          firstName = userData['firstName'] ?? '';
-          lastName = userData['lastName'] ?? '';
-        });
+
+
+  //method to delete the account
+  Future<void> deleteAccount() async{
+    try{
+      User? user = FirebaseAuth.instance.currentUser;
+      if(user!=null){
+        String userName = await GetuserName();
+        deleteUsernameData(userName);
+        await user.delete();
+        
       }
-    });
-  }
-
-  Future<bool> updateName(String newFirstName, String newLastName, String userName) async {
-    bool updated = await DatabaseHelper().updateName(newFirstName, newLastName, userName);
-    if (updated) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('firstName', newFirstName);
-      await prefs.setString('lastName', newLastName);
-      setState(() {
-        firstName = newFirstName;
-        lastName = newLastName;
-      });
-      // Optionally perform any other UI updates or actions here for success
-      updateDisplayName(newFirstName, newLastName); // Update displayed name
-    } else {
-      // Handle the error case here, such as displaying a SnackBar or Toast
+    }catch(e){
+    print("Error: ${e}");
     }
-    return updated;
+    //addananan pag logic para ma delete ang content sa database
   }
-
-  void updateDisplayName(String newFirstName, String newLastName) {
-    setState(() {
-      firstName = newFirstName;
-      lastName = newLastName;
+  void deleteUsernameData(String userName) {
+    DatabaseReference databaseReference = FirebaseDatabase.instance.ref()
+    .child('owners_collection')
+    .child(userName);
+    databaseReference.remove().then((_) {
+      print('Data deleted successfully for username: $userName');
+    }).catchError((error) {
+      print('Failed to delete data: $error');
     });
   }
+  Future<String> GetuserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userName') ?? '';
+  }
+  //todo implement a update name
+  Future<String?> getFullName(String userName) async {
+    DatabaseReference fullNameRef = FirebaseDatabase.instance.reference()
+        .child('owners_collection')
+        .child(userName) // Assuming 'userName' is the key for the user's data
+        .child('user_data')
+        .child('fullName');
+
+    try {
+      DataSnapshot dataSnapshot = await fullNameRef.get();
+      if (dataSnapshot.exists && dataSnapshot.value != null) {
+        return dataSnapshot.value.toString();
+      } else {
+        print('Full Name not found for user: $userName');
+        return null;
+      }
+    } catch (e) {
+      print('Error getting Full Name: $e');
+      return null;
+    }
+  }
+
+  Future<void> updateFullName(String userName, String fullName) async {
+    try {
+      DatabaseReference databaseReference = FirebaseDatabase.instance.ref()
+          .child('owners_collection')
+          .child(userName)
+          .child('user_data')
+          .child('fullName');
+
+      await databaseReference.set(fullName);
+
+      print('Full name updated successfully');
+    } catch (e) {
+      print('Error updating full name: $e');
+
+    }
+  }
+
+  /*Future<String?> getFullName() async {
+    String userName = GetuserName() as String;
+    DatabaseReference databaseReference = FirebaseDatabase.instance.ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('user_data')
+        .child('fullName');
+
+    try {
+      DataSnapshot dataSnapshot = await databaseReference.get();
+      if (dataSnapshot.exists && dataSnapshot.value != null) {
+        return dataSnapshot.value.toString();
+      } else {
+        print('FullName not found for user: $userName');
+        return null;
+      }
+    } catch (e) {
+      print('Error getting FullName: $e');
+      return null;
+    }
+  }*/
+
+
 
 
   @override
@@ -82,7 +141,7 @@ class _SettingsState extends State<Settings> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => WelcomePage(userName: widget.userName)),
+              MaterialPageRoute(builder: (context) => WelcomePage()),
             );
           },
         ),
@@ -95,119 +154,128 @@ class _SettingsState extends State<Settings> {
           ),
         ),
       ),
-      body: Column(
-        children: [
+      body:Column(
+        children:
+        [
           Container(
-            width: MediaQuery.of(context).size.width,
-            height: 250,
-            decoration: BoxDecoration(
-              color: Color(0xE0FFFFFF),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(height: 30),
-                  Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 4,
-                      ),
+          width: MediaQuery.of(context).size.width,
+          height: 250,
+          decoration: BoxDecoration(
+            color: Color(0xE0FFFFFF),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: 30),
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 4,
                     ),
-                    child: Center(
-                      child: Column(
+                  ),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.person_rounded,
+                          size: 130,
+                          color: Colors.black,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text("Edit Full Name"),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    controller: fullNameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'New Full Name',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () async {
+                                    String userName = await GetuserName();
+                                    String newFullName = fullNameController.text;
+                                    await updateFullName(userName, newFullName);
+                                    Navigator.pop(context); // Close the dialog
+                                  },
+                                  child: Text("Save"),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          FutureBuilder<String?>(
+                            future: GetuserName(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text('Error loading user name');
+                              } else {
+                                String userName = snapshot.data ?? '';
+                                return FutureBuilder<String?>(
+                                  future: getFullName(userName),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return CircularProgressIndicator();
+                                    } else if (snapshot.hasError) {
+                                      return Text('Error loading Full Name');
+                                    } else {
+                                      String? fullName = snapshot.data;
+                                      return Text(
+                                        "HELLO, ${fullName != null ? fullName.toUpperCase() : 'USER'} !",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                );
+                              }
+                            },
+                          ),
+                          SizedBox(width: 5),
                           Icon(
-                            Icons.person_rounded,
-                            size: 130,
-                            color: Colors.black,
+                            Icons.edit,
                           ),
                         ],
                       ),
                     ),
                   ),
-                  SizedBox(height: 20),
-                  Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-
-                              return AlertDialog(
-                                title: Text("Edit Name"),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextField(
-                                      controller: _firstNameController,
-                                      decoration: InputDecoration(
-                                        labelText: 'First Name',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
-                                    SizedBox(height: 10),
-                                    TextField(
-                                      controller: _lastNameController,
-                                      decoration: InputDecoration(
-                                        labelText: 'Last Name',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () async {
-                                      String newFirstName = _firstNameController.text;
-                                      String newLastName = _lastNameController.text;
-                                      String userName = widget.userName ?? '';
-                                      bool updated = await updateName(newFirstName, newLastName, userName);
-                                      if (updated) {
-                                        // Update successful
-                                        // Optionally update displayed name in the UI
-                                      } else {
-                                        // Update failed
-                                        // Handle the failure or display an error message
-                                      }
-                                      Navigator.pop(context); // Close the dialog
-                                    },
-                                    child: Text("Save"),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "HELLO, ${firstName.isNotEmpty && lastName.isNotEmpty ? '${firstName.toUpperCase()} ${lastName.toUpperCase()}' : 'USER'} !",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(width: 5),
-                            Icon(
-                              Icons.edit,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
           SizedBox(height: 10),
           Container(
             width: MediaQuery.of(context).size.width,
@@ -223,33 +291,6 @@ class _SettingsState extends State<Settings> {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
-            ),
-          ),
-          SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => changeUsernamePage(userName: widget.userName)),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "CHANGE USERNAME",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Icon(Icons.arrow_right),
-              ],
             ),
           ),
           SizedBox(height: 10),
@@ -280,6 +321,55 @@ class _SettingsState extends State<Settings> {
             ),
           ),
           SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
+                    content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          FirebaseAuth.instance.signOut();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LoginPage(),
+                            ),
+                          );
+                        },
+                        child: Text("Confirm"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "LOGOUT",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Icon(Icons.logout),
+              ],
+            ),
+          ),
+          SizedBox(height: 10),
           Container(
             width: MediaQuery.of(context).size.width,
             height: 25,
@@ -296,61 +386,94 @@ class _SettingsState extends State<Settings> {
               ),
             ),
           ),
-          GestureDetector(
-            onTap: () {
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () {
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Text("Logout", style: TextStyle(fontWeight: FontWeight.bold),),
-                    content: Text("Are you sure you want to logout?", style: TextStyle(fontSize: 16),),
+                    title: Text("DELETE ACCOUNT"),
+                    content: Text("ARE YOU SURE THAT YOU WANT TO DELETE YOUR ACCOUNT?"),
                     actions: [
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: Text("Cancel"),
+                        child: Text("NO"),
                       ),
                       TextButton(
                         onPressed: () {
-                          // Perform logout logic here
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginPage(),
-                            ),
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("DELETE ACCOUNT(2)"),
+                                content: Text("ARE YOU SURE THAT YOU WANT TO DELETE YOUR ACCOUNT?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text("NO"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      deleteAccount();
+                                      Navigator.pop(context);
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: Text("ACCOUNT DELETED!"),
+                                            content: Text("THE ACCOUNT HAS BEEN DELETED."),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
+                                                },
+                                                child: Text("EXIT"),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: Text("YES"),
+                                  ),
+                                ],
+                              );
+                            },
                           );
                         },
-                        child: Text("Confirm"),
+                        child: Text("YES"),
                       ),
                     ],
                   );
                 },
               );
             },
-            child: Container(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey, width: 2),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "LOGOUT",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "DELETE ACCOUNT",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Icon(Icons.logout),
-                ],
-              ),
+                ),
+                Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ),
+              ],
             ),
           ),
           SizedBox(height: 10),

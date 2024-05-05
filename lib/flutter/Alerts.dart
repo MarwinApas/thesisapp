@@ -124,36 +124,7 @@ class _AlertsState extends State<Alerts> {
         .child(userName)
         .child('notifications');
 
-    try {
-      /*DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
-      if (snapshot.value != null && snapshot.value is Map) {
-        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
-
-        kioskMap.forEach((key, value) {
-          if (value is Map<dynamic, dynamic>) {
-            dynamic isRead = value['isRead'];
-            if (isRead == true) {
-              kiosksRef.child(key).update({'isRead': true});
-            }
-          }
-        });
-      }*/
-      DataSnapshot snapshot = await kiosksRef.get() as DataSnapshot;
-      if (snapshot.value != null && snapshot.value is Map) {
-        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
-
-        kioskMap.forEach((key, value) {
-          if (value is Map<dynamic, dynamic>) {
-            dynamic isRead = value['isRead'];
-            if (isRead == false) {
-              kiosksRef.child(key).remove();
-            }
-          }
-        });
-      }
-    } catch (e) {
-      print('Error fetching kiosk names: $e');
-    }
+    kiosksRef.remove();
 
     return notifications;
   }
@@ -227,6 +198,7 @@ class _AlertsState extends State<Alerts> {
                       ),
                       GestureDetector(
                         onTap: () async {
+
                           String? userName = await fetchUserName(); // Fetch the userName
                           if (userName != null) {
                             List<String?> updatedNotifications = await updateNotificationsFromUser(userName);
@@ -234,10 +206,9 @@ class _AlertsState extends State<Alerts> {
                               notifications.addAll(updatedNotifications);
                             });
                           }
-                          // For example, you can show a confirmation dialog here
                         },
                         child: Icon(
-                          Icons.arrow_downward,
+                          Icons.delete_forever,
                           color: Colors.red,
                         ),
                       ),
