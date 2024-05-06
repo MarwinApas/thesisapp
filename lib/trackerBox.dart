@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
@@ -28,6 +30,10 @@ class _TrackerBoxState extends State<TrackerBox> {
   double audRate = 0.0;
   double krwRate = 0.0;
   double feeRate = 0.0;
+  Map<String, int> transactionHistory = {};
+  List<String> transactionNumberHistory = [];
+  double totalSalesToday = 0.0;
+  String transactionCheck = '';
 
 
   @override
@@ -37,6 +43,7 @@ class _TrackerBoxState extends State<TrackerBox> {
     GetUserName().then((username) {
       setState(() {
         userName = username ?? '';
+        updateTransactionHistory();
       });
     });
     getAlertKioskFlag();
@@ -46,6 +53,41 @@ class _TrackerBoxState extends State<TrackerBox> {
     //check1000Denomination();
   }
 
+
+  void updateTransactionHistory() async {
+    await FetchTransactionHistory();
+  }
+
+  Future<void> FetchTransactionHistory() async{
+    DateTime now = DateTime.now();
+    String monthName = DateFormat('MMMM').format(now);
+    String day = DateFormat('d').format(now);
+    List<String> historyToday = [];
+    DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
+        .child(userName.toString())
+        .child('kiosks')
+        .child(widget.boxName)
+        .child('transaction_history')
+        .child(monthName)
+        .child(day);
+    try {
+      DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+        kioskMap.entries.forEach((entry) {
+          String key = entry.key;
+          int value = entry.value;
+
+          transactionNumberHistory.add(key);
+          transactionHistory[key] = value;
+          totalSalesToday = totalSalesToday + value;
+        });
+      }
+    } catch (e) {
+      transactionCheck = '$e';
+      print('Error fetching kiosk transaction history: $e');
+    }
+  }
 
   Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -515,19 +557,38 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 }
                               },
                             ),
-                            SizedBox(height: 50),
+                            SizedBox(height: 20),
                             ElevatedButton(
                               onPressed: () {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                      title: Text("Transaction History"),
-                                      content: Text("Here is your transaction history."),
+                                      content: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text("Transaction History Today"),
+                                          Container(
+                                            height: transactionHistory.length * 20.0,
+                                            child: ListView.builder(
+                                              itemCount: transactionHistory.length,
+                                              itemBuilder: (BuildContext context, int index) {
+                                                return Text(
+                                                  "${transactionNumberHistory[index]}: Kiosk ${widget.boxName} received ${transactionHistory[transactionNumberHistory[index]].toString()}",
+                                                  style: TextStyle(fontSize: 10),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Text("Total sales today: $totalSalesToday"),
+                                        ],
+                                      ),
                                       actions: [
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context).pop(); // Close the alert dialog
+                                            Navigator.of(context).pop();
                                           },
                                           child: Text("Close"),
                                         ),
