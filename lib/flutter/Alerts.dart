@@ -20,6 +20,12 @@ class _AlertsState extends State<Alerts> {
     super.initState();
     fetchUserKiosks();
     fetchUserName();
+    /*getKioskName().then((prefsKioskName) {
+      setState(() {
+        prefsKioskName = prefsKioskName ?? '';
+      });
+    });*/
+
   }
 
   Future<String> fetchUserName() async {
@@ -54,6 +60,16 @@ class _AlertsState extends State<Alerts> {
     } else {
       print('UserName is null');
     }
+  }
+
+  Future<String?> getKioskName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('kioskName');
+  }
+  //removekiosknamefromsharedprefs
+  Future<void> removeKioskName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('kioskName');
   }
 
   Future<List<String?>> getReadNotificationsFromUser(String userName) async {
@@ -251,25 +267,64 @@ class _AlertsState extends State<Alerts> {
                   child: ListView.builder(
                     itemCount: notifications.length,
                     itemBuilder: (BuildContext context, int index) {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 8), // Add some space between icon and text
-                            Text(
-                              "${notifications[index]}",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
+                      return GestureDetector(
+                        onTap: () async {
+                          String? userName = await fetchUserName();
+                          String? prefsKioskName = await getKioskName();// Fetch the userName
+                          if (prefsKioskName !=null ) {
+                            // Update isRead to true
+                            DatabaseReference notificationToUpdate = FirebaseDatabase.instance.ref()
+                                .child('owners_collection')
+                                .child(userName)
+                                .child('kiosks')
+                                .child(prefsKioskName)
+                                .child('alertButton');
+                            notificationToUpdate.update({'isRead': true}).then((_){
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Notification Already Sent'),
+                                    content: Text('The kiosk "$prefsKioskName" has already been notified that you received the emergency message!'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              removeKioskName();
+                              print("halangayawa");
+                            });
+                            print("Patotoya");
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                color: Colors.orange,
                               ),
-                            ),
-                          ],
+                              SizedBox(width: 8), // Add some space between icon and text
+                              Text(
+                                "${notifications[index]}",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
+
                     },
                   ),
                 ),
@@ -294,7 +349,7 @@ class _AlertsState extends State<Alerts> {
                 ),
                 SizedBox(height: 8),
                 Container(
-                  height: 150, // Set a height for the container
+                  height: MediaQuery.of(context).size.height/2, // Set a height for the container
                   child: ListView.builder(
                     itemCount: notifications.length,
                     itemBuilder: (BuildContext context, int index) {

@@ -53,6 +53,10 @@ class _TrackerBoxState extends State<TrackerBox> {
     //check1000Denomination();
   }
 
+  Future<void> setStringKioskName (String kioskName) async{
+    SharedPreferences prefsKioskName = await SharedPreferences.getInstance();
+    prefsKioskName.setString('kioskName', widget.boxName);
+  }
 
   void updateTransactionHistory() async {
     await FetchTransactionHistory();
@@ -226,22 +230,16 @@ class _TrackerBoxState extends State<TrackerBox> {
   }
   Future<void> getAlertKioskFlag() async {
     String dateAndTime = await getTimeStamp();
-    DatabaseReference alertButtonState = FirebaseDatabase.instance.ref('alertButton');
+    DatabaseReference alertButtonState = FirebaseDatabase.instance.ref()
+    .child('owners_collection')
+    .child(userName)
+    .child('kiosks')
+    .child(widget.boxName)
+    .child('alertButton')
+    .child('isPressed');
     alertButtonState.onValue.listen((event) {
       dynamic alertButton = event.snapshot.value ?? false; // Default to false if value is null
       if (alertButton) {
-        /*DatabaseReference sendAlertButtonNotification = FirebaseDatabase.instance.ref()
-            .child('owners_collection')
-            .child(userName)
-            .child('kiosks')
-            .child(kioskName)
-            .child('alertNotification')
-            .child(dateAndTime);
-        sendAlertButtonNotification.set({
-          'message': 'the alert button on the ${kioskName} has been pressed!',
-          'isRead': false
-        });*/
-
         // Send the alert notification to 'notifications'
         DatabaseReference sendAlertNotification = FirebaseDatabase.instance.ref()
             .child('owners_collection')
@@ -251,119 +249,13 @@ class _TrackerBoxState extends State<TrackerBox> {
         sendAlertNotification.set({
           'message': 'the alert button in ${widget.boxName} has been pressed!',
           'isRead': false
-        });/*.then((_) {
-          DatabaseReference returnTheAlertIntoFalse = FirebaseDatabase.instance.ref('alertButton');
-          returnTheAlertIntoFalse.set(false)
-              .then((_) => print('Alert button set to false after sending notifications'))
-              .catchError((error) => print('Error setting alert button to false: $error'));
-        }).catchError((error) => print("Error sending alert notification: $error"));*/
+        }).then((_){
+          setStringKioskName(widget.boxName);
+        });
       }
     });
   }
 
-  /*Future<void> check1000Denomination() async {
-    DatabaseReference thouRef = FirebaseDatabase.instance
-        .ref()
-        .child('owners_collection')
-        .child(userName)
-        .child('kiosks')
-        .child(widget.boxName)
-        .child('denominations')
-        .child('1000');
-
-    thouRef.once().then((DatabaseEvent event) {
-      if (event.snapshot.value != null) {
-        int? denominationValue = int.tryParse(event.snapshot.value.toString());
-        if (denominationValue != null) {
-          print('Denomination Value: $denominationValue');
-          if (denominationValue < 3000) {
-            getTimeStamp().then((timestamp) async {
-              DatabaseReference sendThouNotif = FirebaseDatabase.instance
-                  .ref()
-                  .child('owners_collection')
-                  .child(userName)
-                  .child('notifications')
-                  .child(timestamp);
-              await sendThouNotif.set({
-                "message": "The ${widget.boxName} is low on 1000 pesos",
-                "isRead": false
-              });
-              print('Notification set successfully.');
-            });
-          } else {
-            print('Denomination value is not greater than 3000.');
-          }
-        } else {
-          print('Error parsing denomination value.');
-        }
-      } else {
-        print('Denomination value is null.');
-      }
-    }).catchError((error) {
-      print("Error fetching data: $error");
-    });
-  }
-
-
-  Future<void> checkRemainingStocksPerDenomination() async {
-    DatabaseReference stocksPerDenominationRef = FirebaseDatabase.instance.ref()
-        .child('owners_collection')
-        .child(userName)
-        .child('kiosks')
-        .child(widget.boxName)
-        .child('denominations');
-
-    stocksPerDenominationRef.onValue.listen((event) {
-      if(event.snapshot.value != null && event.snapshot.value is Map) {
-        Map<dynamic, dynamic> denominationsData = event.snapshot.value as Map<dynamic, dynamic>;
-
-        Map<String, int> denominationsStock = {
-          '1000': int.tryParse(denominationsData['1000'] ?? '0') ?? 0,
-          '100': int.tryParse(denominationsData['100'] ?? '0') ?? 0,
-          '20': int.tryParse(denominationsData['20'] ?? '0') ?? 0,
-          '5': int.tryParse(denominationsData['5'] ?? '0') ?? 0,
-          '1': int.tryParse(denominationsData['1'] ?? '0') ?? 0,
-        };
-
-        // Now you can check the stock levels and trigger notifications or take other actions
-        int? parsedValue1000 = int.tryParse(denominationsStock['1000'].toString());
-        if (parsedValue1000 != null && parsedValue1000 < 3000) {
-          sendLowDenominationNotification(userName, widget.boxName, '1000', '');
-        }
-        int? parsedValue100 = int.tryParse(denominationsStock['100'].toString());
-        if (parsedValue100 != null && parsedValue100 < 500) {
-          sendLowDenominationNotification(userName, widget.boxName, '100', '');
-        }
-        int? parsedValue20 = int.tryParse(denominationsStock['20'].toString());
-        if (parsedValue20 != null && parsedValue20 < 140) {
-          sendLowDenominationNotification(userName, widget.boxName, '20', '');
-        }
-        int? parsedValue5 = int.tryParse(denominationsStock['5'].toString());
-        if (parsedValue5 != null && parsedValue5 < 50) {
-          sendLowDenominationNotification(userName, widget.boxName, '5', '');
-        }
-        int? parsedValue1 = int.tryParse(denominationsStock['1'].toString());
-        if (parsedValue1 != null && parsedValue1 < 20) {
-          sendLowDenominationNotification(userName, widget.boxName, '1', '');
-        }
-
-      }
-    });
-  }
-  Future<void> sendLowDenominationNotification(String userName, String kioskName, String denomination, String message) async {
-    String dateAndTime = await getTimeStamp();
-    DatabaseReference denominationRef = FirebaseDatabase.instance.ref()
-        .child('owners_collection')
-        .child(userName)
-        .child('notifications')
-        .child(dateAndTime);
-    denominationRef.set(
-        {
-          'message': 'Kiosk ${widget.boxName} has low on $denomination peso stocks. $message',
-          'isRead': false
-        }
-    );
-  }*/
 
 
   @override
@@ -564,26 +456,33 @@ class _TrackerBoxState extends State<TrackerBox> {
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                      content: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text("Transaction History Today"),
-                                          Container(
-                                            height: transactionHistory.length * 20.0,
-                                            child: ListView.builder(
-                                              itemCount: transactionHistory.length,
-                                              itemBuilder: (BuildContext context, int index) {
-                                                return Text(
-                                                  "${transactionNumberHistory[index]}: Kiosk ${widget.boxName} received ${transactionHistory[transactionNumberHistory[index]].toString()}",
-                                                  style: TextStyle(fontSize: 10),
-                                                );
-                                              },
+                                      title: Center(
+                                        child: Text("Transaction History "),
+                                      ),
+                                      content: SingleChildScrollView(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              height: transactionHistory.length * 50.0,
+                                              width: double.maxFinite,
+                                              child: ListView.builder(
+                                                itemCount: transactionHistory.length,
+                                                itemBuilder: (BuildContext context, int index) {
+                                                  return ListTile(
+                                                    title: Text(
+                                                      "${transactionNumberHistory[index]}: Kiosk ${widget.boxName} received ${transactionHistory[transactionNumberHistory[index]].toString()}",
+                                                      style: TextStyle(fontSize: 12),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(height: 10),
-                                          Text("Total sales today: $totalSalesToday"),
-                                        ],
+                                            SizedBox(height: 10),
+                                            Text("Total sales today: $totalSalesToday"),
+                                          ],
+                                        ),
                                       ),
                                       actions: [
                                         TextButton(
@@ -759,6 +658,51 @@ class _TrackerBoxState extends State<TrackerBox> {
                                             String currency = selectedCurrency;
                                             String price = priceController.text ?? '0.0';
 
+                                            //if fee rate is selected
+                                            if(selectedCurrency =='FEE_rate'){
+                                              double feeRate = double.parse(price);
+                                              double usdRate = await fetchUSDRate();
+                                              double audRate = await AUDRateToday();
+                                              double krwRate = await KRWRateToday();
+
+                                              double updatedAudPrice = audRate - (audRate * feeRate);
+                                              double updatedUsdPrice = usdRate - (usdRate * feeRate);
+                                              double updatedKrwPrice = krwRate - (krwRate * feeRate);
+
+                                              DatabaseReference audPriceRef = FirebaseDatabase.instance
+                                                  .ref()
+                                                  .child('currency_rate')
+                                                  .child('AUD_rate');
+                                              DatabaseReference usdPriceRef = FirebaseDatabase.instance
+                                                  .ref()
+                                                  .child('currency_rate')
+                                                  .child('USD_rate');
+                                              DatabaseReference krwPriceRef = FirebaseDatabase.instance
+                                                  .ref()
+                                                  .child('currency_rate')
+                                                  .child('KRW_rate');
+
+                                              // Update AUD rate
+                                              audPriceRef.set(updatedAudPrice.toStringAsFixed(2)).then((_) {
+                                                // Update USD rate
+                                                usdPriceRef.set(updatedUsdPrice.toStringAsFixed(2)).then((_) {
+                                                  // Update KRW rate
+                                                  krwPriceRef.set(updatedKrwPrice.toStringAsFixed(4)).then((_) {
+                                                    Navigator.pop(context);
+                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                      content: Text('Prices updated successfully!'),
+                                                    ));
+                                                  }).catchError((error) {
+                                                   // handleSetPriceError(context, error);
+                                                  });
+                                                }).catchError((error) {
+                                                 // handleSetPriceError(context, error);
+                                                });
+                                              }).catchError((error) {
+                                               // handleSetPriceError(context, error);
+                                              });
+                                            }
+
                                             DatabaseReference currencyPriceRef = FirebaseDatabase.instance
                                                 .ref()
                                                 .child('currency_rate')
@@ -776,14 +720,14 @@ class _TrackerBoxState extends State<TrackerBox> {
                                               ));
                                             });
                                           },
-                                          child: Text("Set Price"), // Text for the set price button
+                                          child: Text("Set Price"),
                                         ),
                                       ],
                                     );
                                   },
                                 );
                               },
-                              child: Text("Set Price"), // Label the button as "Set Price"
+                              child: Text("Set Price"),
                             ),
 
 
