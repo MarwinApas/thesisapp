@@ -33,6 +33,8 @@ class _TrackerBoxState extends State<TrackerBox> {
   Map<String, int> transactionHistory = {};
   List<String> transactionNumberHistory = [];
   double totalSalesToday = 0.0;
+  double totalSalesThisWeek = 0.0;
+  double totalSalesThisMonth = 0.0;
   String transactionCheck = '';
 
 
@@ -62,6 +64,7 @@ class _TrackerBoxState extends State<TrackerBox> {
     await FetchTransactionHistory();
   }
 
+  //daily transaction history
   Future<void> FetchTransactionHistory() async{
     DateTime now = DateTime.now();
     String monthName = DateFormat('MMMM').format(now);
@@ -93,6 +96,81 @@ class _TrackerBoxState extends State<TrackerBox> {
     }
   }
 
+  //weekly transaction history
+  Future<void> FetchWeeklyTransactionHistory() async {
+    DateTime now = DateTime.now();
+    String monthName = DateFormat('MMMM').format(now);
+    List<String> historyThisWeek = [];
+
+    DateTime startDate = now.subtract(Duration(days: now.weekday - 1));
+    DateTime endDate = now.add(Duration(days: DateTime.daysPerWeek - now.weekday));
+
+    DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
+        .child(userName.toString())
+        .child('kiosks')
+        .child(widget.boxName)
+        .child('transaction_history')
+        .child(monthName);
+
+    try {
+      DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+        kioskMap.forEach((day, dayData) {
+          DateTime dayDateTime = DateTime.parse(day);
+          if (dayDateTime.isAfter(startDate.subtract(Duration(days: 1))) && dayDateTime.isBefore(endDate.add(Duration(days: 1)))) {
+            dayData.forEach((key, value) {
+              historyThisWeek.add('$day $key: $value');
+              totalSalesThisWeek += value;
+            });
+          }
+        });
+      }
+    } catch (e) {
+      transactionCheck = '$e';
+      print('Error fetching kiosk weekly transaction history: $e');
+    }
+
+    setState(() {
+      totalSalesThisWeek = totalSalesThisWeek;
+    });
+  }
+
+  //monthly transaction history
+  Future<void> FetchMonthlyTransactionHistory() async {
+    DateTime now = DateTime.now();
+    String monthName = DateFormat('MMMM').format(now);
+    List<String> historyThisMonth = [];
+
+    DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
+        .child(userName.toString())
+        .child('kiosks')
+        .child(widget.boxName)
+        .child('transaction_history')
+        .child(monthName);
+
+    try {
+      DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+        kioskMap.forEach((day, dayData) {
+          dayData.forEach((key, value) {
+            historyThisMonth.add('$day $key: $value');
+            totalSalesThisMonth += value;
+          });
+        });
+      }
+    } catch (e) {
+      transactionCheck = '$e';
+      print('Error fetching kiosk monthly transaction history: $e');
+    }
+
+    setState(() {
+      totalSalesThisMonth = totalSalesThisMonth;
+    });
+  }
+
+
   Future<String?> GetUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userName');
@@ -122,14 +200,14 @@ class _TrackerBoxState extends State<TrackerBox> {
         setState(() {
           usdRate = rate;
         });
-        completer.complete(rate); // Resolve the Future with the fetched rate
+        completer.complete(rate);
       } else {
         print("USD rate snapshot does not exist");
-        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+        completer.completeError("USD rate snapshot does not exist");
       }
     }, onError: (error) {
       print("Error fetching USD rate: $error");
-      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -149,14 +227,14 @@ class _TrackerBoxState extends State<TrackerBox> {
         setState(() {
           audRate = rate;
         });
-        completer.complete(rate); // Resolve the Future with the fetched rate
+        completer.complete(rate);
       } else {
         print("USD rate snapshot does not exist");
-        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+        completer.completeError("USD rate snapshot does not exist");
       }
     }, onError: (error) {
       print("Error fetching USD rate: $error");
-      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -176,14 +254,14 @@ class _TrackerBoxState extends State<TrackerBox> {
         setState(() {
           krwRate = rate;
         });
-        completer.complete(rate); // Resolve the Future with the fetched rate
+        completer.complete(rate);
       } else {
         print("USD rate snapshot does not exist");
-        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+        completer.completeError("USD rate snapshot does not exist");
       }
     }, onError: (error) {
       print("Error fetching USD rate: $error");
-      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -203,14 +281,14 @@ class _TrackerBoxState extends State<TrackerBox> {
         setState(() {
           feeRate = rate;
         });
-        completer.complete(rate); // Resolve the Future with the fetched rate
+        completer.complete(rate);
       } else {
         print("USD rate snapshot does not exist");
-        completer.completeError("USD rate snapshot does not exist"); // Resolve with an error if snapshot does not exist
+        completer.completeError("USD rate snapshot does not exist");
       }
     }, onError: (error) {
       print("Error fetching USD rate: $error");
-      completer.completeError(error); // Resolve with an error if there's an error fetching the rate
+      completer.completeError(error);
     });
 
     return completer.future;
@@ -457,7 +535,15 @@ class _TrackerBoxState extends State<TrackerBox> {
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       title: Center(
-                                        child: Text("Transaction History "),
+                                        child: Column(
+                                          children: [
+                                            Text("Transaction History"),
+                                            Text("${DateFormat('MMMM d, yyyy').format(DateTime.now())}")
+                                          ],
+                                        )
+                                        /*Text(
+                                          "Transaction History ${DateFormat('MMMM d, yyyy').format(DateTime.now())}",
+                                        ),*/
                                       ),
                                       content: SingleChildScrollView(
                                         child: Column(
@@ -465,22 +551,25 @@ class _TrackerBoxState extends State<TrackerBox> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Container(
-                                              height: transactionHistory.length * 50.0,
+                                              height: transactionHistory.length * 70.0,
                                               width: double.maxFinite,
                                               child: ListView.builder(
                                                 itemCount: transactionHistory.length,
                                                 itemBuilder: (BuildContext context, int index) {
                                                   return ListTile(
                                                     title: Text(
-                                                      "${transactionNumberHistory[index]}: Kiosk ${widget.boxName} received ${transactionHistory[transactionNumberHistory[index]].toString()}",
+                                                      "${transactionNumberHistory[index]}: Kiosk ${widget.boxName} received ${transactionHistory[transactionNumberHistory[index]].toString()} pesos",
                                                       style: TextStyle(fontSize: 12),
                                                     ),
                                                   );
                                                 },
                                               ),
                                             ),
+
                                             SizedBox(height: 10),
-                                            Text("Total sales today: $totalSalesToday"),
+                                            Text("Total sales today: $totalSalesToday pesos"),
+                                            Text("Total sales this week: $totalSalesThisWeek pesos"),
+                                            Text("Total sales this month: $totalSalesThisMonth pesos"),
                                           ],
                                         ),
                                       ),
