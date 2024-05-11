@@ -7,6 +7,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:collection';
 //import 'package:cloud_firestore/cloud_firestore.dart';
 //import 'dart:convert';
 //import 'package:flutter/services.dart' show rootBundle;
@@ -30,12 +31,16 @@ class _TrackerBoxState extends State<TrackerBox> {
   double audRate = 0.0;
   double krwRate = 0.0;
   double feeRate = 0.0;
-  Map<String, int> transactionHistory = {};
-  List<String> transactionNumberHistory = [];
+  List<Transaction> transactions = [];
   double totalSalesToday = 0.0;
   double totalSalesThisWeek = 0.0;
   double totalSalesThisMonth = 0.0;
   String transactionCheck = '';
+
+
+  DateTime dateFrom = DateTime.now();
+  DateTime dateTo = DateTime.now();
+
 
 
   @override
@@ -64,110 +69,81 @@ class _TrackerBoxState extends State<TrackerBox> {
     await FetchTransactionHistory();
   }
 
+
+
   //daily transaction history
-  Future<void> FetchTransactionHistory() async{
+  Future<void> FetchTransactionHistory() async {
     DateTime now = DateTime.now();
-    String monthName = DateFormat('MMMM').format(now);
+    String yearNumber = DateFormat('yyyy').format(now);
+    String monthNumber= DateFormat('MM').format(now);
+    String currentYearMonth = DateFormat('yyyy-MM').format(now);
     String day = DateFormat('d').format(now);
     List<String> historyToday = [];
     DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
         .child(userName.toString())
         .child('kiosks')
         .child(widget.boxName)
-        .child('transaction_history')
-        .child(monthName)
-        .child(day);
+        .child('transaction_history');
     try {
       DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
       if (snapshot.value != null && snapshot.value is Map) {
-        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
+        Map<dynamic, dynamic> kioskMap = LinkedHashMap.from(snapshot.value as Map<dynamic, dynamic>);
         kioskMap.entries.forEach((entry) {
           String key = entry.key;
-          int value = entry.value;
-
-          transactionNumberHistory.add(key);
-          transactionHistory[key] = value;
-          totalSalesToday = totalSalesToday + value;
+          int value = entry.value['amount'];
+          String name = entry.value['name'];
+          String dateTime = entry.value['dateTime'];
+          String formattedDateTo = '${dateTo.year}-${dateTo.month.toString().padLeft(2, '0')}-${dateTo.day.toString().padLeft(2, '0')} ${dateTo.hour.toString().padLeft(2, '0')}:${dateTo.minute.toString().padLeft(2, '0')}';
+          String formattedDateFrom = '${dateFrom.year}-${dateFrom.month.toString().padLeft(2, '0')}-${dateFrom.day.toString().padLeft(2, '0')} ${dateFrom.hour.toString().padLeft(2, '0')}:${dateFrom.minute.toString().padLeft(2, '0')}';
+          transactions.add(Transaction(
+            key: key,
+            value: value,
+            name: name,
+            dateTime: dateTime,
+          ));
         });
       }
+
+      transactions.sort((a, b) {
+        String dateTimeA = a.dateTime;
+        String dateTimeB = b.dateTime;
+
+        // Assuming your date and time format is in the format "yyyy-MM-dd HH:mm"
+        DateFormat format = DateFormat("yyyy-MM-dd HH:mm");
+        DateTime parsedDateTimeA = format.parse(dateTimeA);
+        DateTime parsedDateTimeB = format.parse(dateTimeB);
+        return parsedDateTimeA.compareTo(parsedDateTimeB);
+      });
+
+      DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
+      String currentDate = DateFormat('yyyy-MM-dd').format(now);
+
+
+      for (Transaction transaction in transactions) {
+        String dateTimeString = transaction.dateTime;
+        DateFormat format = DateFormat("yyyy-MM-dd HH:mm");
+        DateTime transactionDateTime = format.parse(dateTimeString);
+        String transactionDate = transaction.dateTime.split(' ')[0];
+        String transactionYearMonth = transactionDate.split('-').take(2).join('-');
+
+
+        if (transactionDateTime.isAfter(sevenDaysAgo) && transactionDateTime.isBefore(now)) {
+          totalSalesThisWeek += transaction.value;
+        }
+
+        if (transactionYearMonth == currentYearMonth) {
+          totalSalesThisMonth += transaction.value;
+        }
+
+        if (transactionDate == currentDate) {
+          totalSalesToday += transaction.value;
+        }
+      }
+
     } catch (e) {
       transactionCheck = '$e';
       print('Error fetching kiosk transaction history: $e');
     }
-  }
-
-  //weekly transaction history
-  Future<void> FetchWeeklyTransactionHistory() async {
-    DateTime now = DateTime.now();
-    String monthName = DateFormat('MMMM').format(now);
-    List<String> historyThisWeek = [];
-
-    DateTime startDate = now.subtract(Duration(days: now.weekday - 1));
-    DateTime endDate = now.add(Duration(days: DateTime.daysPerWeek - now.weekday));
-
-    DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
-        .child(userName.toString())
-        .child('kiosks')
-        .child(widget.boxName)
-        .child('transaction_history')
-        .child(monthName);
-
-    try {
-      DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
-      if (snapshot.value != null && snapshot.value is Map) {
-        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
-        kioskMap.forEach((day, dayData) {
-          DateTime dayDateTime = DateTime.parse(day);
-          if (dayDateTime.isAfter(startDate.subtract(Duration(days: 1))) && dayDateTime.isBefore(endDate.add(Duration(days: 1)))) {
-            dayData.forEach((key, value) {
-              historyThisWeek.add('$day $key: $value');
-              totalSalesThisWeek += value;
-            });
-          }
-        });
-      }
-    } catch (e) {
-      transactionCheck = '$e';
-      print('Error fetching kiosk weekly transaction history: $e');
-    }
-
-    setState(() {
-      totalSalesThisWeek = totalSalesThisWeek;
-    });
-  }
-
-  //monthly transaction history
-  Future<void> FetchMonthlyTransactionHistory() async {
-    DateTime now = DateTime.now();
-    String monthName = DateFormat('MMMM').format(now);
-    List<String> historyThisMonth = [];
-
-    DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
-        .child(userName.toString())
-        .child('kiosks')
-        .child(widget.boxName)
-        .child('transaction_history')
-        .child(monthName);
-
-    try {
-      DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
-      if (snapshot.value != null && snapshot.value is Map) {
-        Map<dynamic, dynamic> kioskMap = snapshot.value as Map<dynamic, dynamic>;
-        kioskMap.forEach((day, dayData) {
-          dayData.forEach((key, value) {
-            historyThisMonth.add('$day $key: $value');
-            totalSalesThisMonth += value;
-          });
-        });
-      }
-    } catch (e) {
-      transactionCheck = '$e';
-      print('Error fetching kiosk monthly transaction history: $e');
-    }
-
-    setState(() {
-      totalSalesThisMonth = totalSalesThisMonth;
-    });
   }
 
 
@@ -325,7 +301,7 @@ class _TrackerBoxState extends State<TrackerBox> {
             .child('notifications')
             .child(dateAndTime);
         sendAlertNotification.set({
-          'message': 'the alert button in ${widget.boxName} has been pressed!',
+          'message': 'the alert button in ${widget.boxName} \nhas been pressed! Click to confirm.',
           'isRead': false
         }).then((_){
           setStringKioskName(widget.boxName);
@@ -537,8 +513,8 @@ class _TrackerBoxState extends State<TrackerBox> {
                                       title: Center(
                                         child: Column(
                                           children: [
+
                                             Text("Transaction History"),
-                                            Text("${DateFormat('MMMM d, yyyy').format(DateTime.now())}")
                                           ],
                                         )
                                         /*Text(
@@ -550,23 +526,169 @@ class _TrackerBoxState extends State<TrackerBox> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Container(
-                                              height: transactionHistory.length * 70.0,
-                                              width: double.maxFinite,
-                                              child: ListView.builder(
-                                                itemCount: transactionHistory.length,
-                                                itemBuilder: (BuildContext context, int index) {
-                                                  return ListTile(
-                                                    title: Text(
-                                                      "${transactionNumberHistory[index]}: Kiosk ${widget.boxName} received ${transactionHistory[transactionNumberHistory[index]].toString()} pesos",
-                                                      style: TextStyle(fontSize: 12),
-                                                    ),
-                                                  );
-                                                },
+                                            SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              child: DataTable(
+                                                dataRowHeight: 50,
+                                                columns: [
+                                                  DataColumn(label: Text('DateTime')),
+                                                  DataColumn(label: Text('Amount (pesos)')),
+                                                  DataColumn(label: Text('Name')),
+                                                  DataColumn(label: Text('Transaction \nNumber')),
+
+
+                                                ],
+                                                rows: List<DataRow>.generate(
+                                                  transactions.length,
+                                                      (index) => DataRow(
+                                                    cells: [
+
+                                                      DataCell(Text('${transactions[index].dateTime}')),
+                                                      DataCell(Text('${transactions[index].value}')),
+                                                      DataCell(Text('${transactions[index].name}')),
+                                                      DataCell(Text('${transactions[index].key}')),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             ),
 
                                             SizedBox(height: 10),
+                                            Row(
+                                              children: [
+                                                Column(
+                                                  children: [
+                                                    Text("Date From:"),
+                                                    CupertinoButton(
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(5),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black,
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: Builder(
+                                                          builder: (context) {
+                                                            return Text(
+                                                              '${dateFrom.month}-${dateFrom.day}-${dateFrom.year}',
+                                                              style: TextStyle(
+                                                                color: Colors.white,
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
+                                                      ),
+                                                      onPressed: () async {
+                                                        final selectedDate = await showCupertinoModalPopup(
+                                                          context: context,
+                                                          builder: (BuildContext context) => Container(
+                                                            height: 300,
+                                                            color: Colors.white,
+                                                            child: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                SizedBox(
+                                                                  height: 200,
+                                                                  child: CupertinoDatePicker(
+                                                                    backgroundColor: Colors.white,
+                                                                    initialDateTime: dateFrom,
+                                                                    maximumDate: DateTime.now(),
+                                                                    onDateTimeChanged: (DateTime newFrom) {
+                                                                      setState(() => dateFrom = newFrom);
+                                                                    },
+                                                                    mode: CupertinoDatePickerMode.date,
+                                                                  ),
+                                                                ),
+                                                                CupertinoButton(
+                                                                  child: Text("OK"),
+                                                                  onPressed: () {
+                                                                    Navigator.of(context).pop(dateFrom);
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+
+                                                        if (selectedDate != null) {
+                                                          setState(() {
+                                                            dateFrom = selectedDate;
+                                                            updateTransactionHistory();
+                                                            (context as Element).markNeedsBuild();
+                                                          });
+                                                        }
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                                Spacer(),
+                                                Column(
+                                                  //Date to
+                                                  children: [
+                                                    Text("Date To:"),
+                                                    CupertinoButton(
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(5),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black,
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: Builder(
+                                                          builder: (context) {
+                                                            return Text(
+                                                              '${dateTo.month}-${dateTo.day}-${dateTo.year}',
+                                                              style: TextStyle(
+                                                                color: Colors.white,
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
+                                                      ),
+                                                      onPressed: () async {
+                                                        final selectedDate = await showCupertinoModalPopup(
+                                                          context: context,
+                                                          builder: (BuildContext context) => Container(
+                                                            height: 300,
+                                                            color: Colors.white,
+                                                            child: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                SizedBox(
+                                                                  height: 200,
+                                                                  child: CupertinoDatePicker(
+                                                                    backgroundColor: Colors.white,
+                                                                    initialDateTime: dateTo,
+                                                                    maximumDate: DateTime.now(),
+                                                                    onDateTimeChanged: (DateTime newTo) {
+                                                                      setState(() => dateTo = newTo);
+                                                                    },
+                                                                    mode: CupertinoDatePickerMode.date,
+                                                                  ),
+                                                                ),
+                                                                CupertinoButton(
+                                                                  child: Text("OK"),
+                                                                  onPressed: () {
+                                                                    Navigator.of(context).pop(dateTo);
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+
+                                                        if (selectedDate != null) {
+                                                          setState(() {
+                                                            dateTo = selectedDate;
+                                                            updateTransactionHistory();
+                                                            (context as Element).markNeedsBuild();
+                                                          });
+                                                        }
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+
                                             Text("Total sales today: $totalSalesToday pesos"),
                                             Text("Total sales this week: $totalSalesThisWeek pesos"),
                                             Text("Total sales this month: $totalSalesThisMonth pesos"),
@@ -818,8 +940,6 @@ class _TrackerBoxState extends State<TrackerBox> {
                               },
                               child: Text("Set Price"),
                             ),
-
-
                           ],
                         ),
                       ),
@@ -847,3 +967,19 @@ class _TrackerBoxState extends State<TrackerBox> {
     );
   }
 }
+
+class Transaction {
+  final String key;
+  final int value;
+  final String name;
+  final String dateTime;
+
+  Transaction({
+    required this.key,
+    required this.value,
+    required this.name,
+    required this.dateTime,
+  });
+}
+
+

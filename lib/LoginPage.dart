@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text("Error"),
-            content: Text("Incorrect username or password. please try again."),
+            content: Text("Incorrect Email address or password. please try again."),
             actions: [
               TextButton(
                 onPressed: () {

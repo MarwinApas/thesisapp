@@ -205,7 +205,7 @@ class _AlertsState extends State<Alerts> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "UNREAD NOTIFICATIONS",
+                        "NOTIFICATIONS",
                         style: TextStyle(
                           color: Color(0xFFA94F02),
                           fontWeight: FontWeight.bold,
@@ -263,7 +263,7 @@ class _AlertsState extends State<Alerts> {
                 ),
                 SizedBox(height: 8),
                 Container(
-                  height: 150, // Set a height for the container
+                  height: MediaQuery.of(context).size.height-150, // Set a height for the container
                   child: ListView.builder(
                     itemCount: notifications.length,
                     itemBuilder: (BuildContext context, int index) {
@@ -284,7 +284,7 @@ class _AlertsState extends State<Alerts> {
                                 context: context,
                                 builder: (BuildContext context) {
                                   return AlertDialog(
-                                    title: Text('Notification Already Sent'),
+                                    title: Text('Notification Successfully Sent'),
                                     content: Text('The kiosk "$prefsKioskName" has already been notified that you received the emergency message!'),
                                     actions: [
                                       TextButton(
@@ -328,7 +328,7 @@ class _AlertsState extends State<Alerts> {
                     },
                   ),
                 ),
-                Container(
+                /*Container(
                   height: 2,
                   color: Colors.grey,
                 ),
@@ -370,7 +370,7 @@ class _AlertsState extends State<Alerts> {
                       );
                     },
                   ),
-                ),
+                ),*/
               ],
             ),
             Positioned(
