@@ -387,6 +387,20 @@ class _TrackerBoxState extends State<TrackerBox> {
     });
   }
 
+  Future<void> ReadDenomination() async{
+    DatabaseReference kioskDenominationsRef = FirebaseDatabase.instance
+        .ref()
+        .child('owners_collection')
+        .child(userName)
+        .child('kiosk')
+        .child(widget.boxName)
+        .child('denominations');
+    //widget.boxName = 'hatdog';
+    await kioskDenominationsRef.update({
+      "isRead": true
+    });
+  }
+
 
 
   @override
@@ -458,80 +472,120 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 } else {
                                   DataSnapshot dataSnapshot = snapshot.data!.snapshot;
                                   Map<dynamic, dynamic> denominationsData = dataSnapshot.value as Map<dynamic, dynamic>;
-                                  if ((int.tryParse(denominationsData['1000']) ?? 0) < 3000) {
-                                    getTimeStamp().then((timestamp) async {
-                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
-                                          .ref()
-                                          .child('owners_collection')
-                                          .child(userName)
-                                          .child('notifications')
-                                          .child(timestamp);
-                                      await sendThouNotif.set({
-                                        "message": "The ${widget.boxName} is low on 1000 pesos",
-                                        "isRead": false
+                                  if(!denominationsData['isReadLow']){
+                                    if ((int.tryParse(denominationsData['1000']) ?? 0) < 3000) {
+                                      getTimeStamp().then((timestamp) async {
+                                        DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('notifications')
+                                            .child(timestamp);
+                                        await sendThouNotif.set({
+                                          "message": "The ${widget.boxName} is low on 1000 pesos",
+                                          "isRead": false
+                                        });
+                                        DatabaseReference updateIsReadDenomination = FirebaseDatabase.instance
+                                        .ref()
+                                        .child('owners_collection')
+                                        .child(userName)
+                                        .child('kiosks')
+                                        .child(widget.boxName)
+                                        .child('denominations');
+                                        await updateIsReadDenomination.update({'isReadLow':true});
+                                        print('Notification set successfully.');
                                       });
-                                      print('Notification set successfully.');
-                                    });
-                                  }
-                                  else if ((int.tryParse(denominationsData['100']) ?? 0) < 500) {
-                                    getTimeStamp().then((timestamp) async {
-                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
-                                          .ref()
-                                          .child('owners_collection')
-                                          .child(userName)
-                                          .child('notifications')
-                                          .child(timestamp);
-                                      await sendThouNotif.set({
-                                        "message": "The ${widget.boxName} is low on 1000 pesos",
-                                        "isRead": false
+                                    }
+                                    else if ((int.tryParse(denominationsData['100']) ?? 0) < 500) {
+                                      getTimeStamp().then((timestamp) async {
+                                        DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('notifications')
+                                            .child(timestamp);
+                                        await sendThouNotif.set({
+                                          "message": "The ${widget.boxName} is low on 100 pesos",
+                                          "isRead": false
+                                        });
+                                        DatabaseReference updateIsReadDenomination = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('kiosks')
+                                            .child(widget.boxName)
+                                            .child('denominations');
+                                        await updateIsReadDenomination.update({'isReadLow':true});
                                       });
-                                      print('Notification set successfully.');
-                                    });
-                                  }
-                                  else if ((int.tryParse(denominationsData['20']) ?? 0) < 100) {
-                                    getTimeStamp().then((timestamp) async {
-                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
-                                          .ref()
-                                          .child('owners_collection')
-                                          .child(userName)
-                                          .child('notifications')
-                                          .child(timestamp);
-                                      await sendThouNotif.set({
-                                        "message": "The ${widget.boxName} is low on 100 pesos",
-                                        "isRead": false
+                                    }
+                                    else if ((int.tryParse(denominationsData['20']) ?? 0) < 100) {
+                                      getTimeStamp().then((timestamp) async {
+                                        DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('notifications')
+                                            .child(timestamp);
+                                        await sendThouNotif.set({
+                                          "message": "The ${widget.boxName} is low on 100 pesos",
+                                          "isRead": false
+                                        });
+                                        DatabaseReference updateIsReadDenomination = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('kiosks')
+                                            .child(widget.boxName)
+                                            .child('denominations');
+                                        await updateIsReadDenomination.update({'isReadLow':true});
                                       });
-                                      print('Notification set successfully.');
-                                    });
-                                  }
-                                  else if ((int.tryParse(denominationsData['5']) ?? 0) < 50) {
-                                    getTimeStamp().then((timestamp) async {
-                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
-                                          .ref()
-                                          .child('owners_collection')
-                                          .child(userName)
-                                          .child('notifications')
-                                          .child(timestamp);
-                                      await sendThouNotif.set({
-                                        "message": "The ${widget.boxName} is low on 5 pesos",
-                                        "isRead": false
+                                    }
+                                    else if ((int.tryParse(denominationsData['5']) ?? 0) < 50) {
+                                      getTimeStamp().then((timestamp) async {
+                                        DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('notifications')
+                                            .child(timestamp);
+                                        await sendThouNotif.set({
+                                          "message": "The ${widget.boxName} is low on 5 pesos",
+                                          "isRead": false
+                                        });
+                                        DatabaseReference updateIsReadDenomination = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('kiosks')
+                                            .child(widget.boxName)
+                                            .child('denominations');
+                                       await updateIsReadDenomination.update({'isReadLow':true});
+                                        print('Notification set successfully.');
                                       });
-                                      print('Notification set successfully.');
-                                    });
-                                  }
-                                  else if ((int.tryParse(denominationsData['1']) ?? 0) < 10) {
-                                    getTimeStamp().then((timestamp) async {
-                                      DatabaseReference sendThouNotif = FirebaseDatabase.instance
-                                          .ref()
-                                          .child('owners_collection')
-                                          .child(userName)
-                                          .child('notifications')
-                                          .child(timestamp);
-                                      await sendThouNotif.set({
-                                        "message": "The ${widget.boxName} is low on 1 pesos",
-                                        "isRead": false
+                                    }
+                                    else if ((int.tryParse(denominationsData['1']) ?? 0) < 10) {
+                                      getTimeStamp().then((timestamp) async {
+                                        DatabaseReference sendThouNotif = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('notifications')
+                                            .child(timestamp);
+                                        await sendThouNotif.set({
+                                          "message": "The ${widget.boxName} is low on 1 pesos",
+                                          "isRead": false
+                                        });
+                                        DatabaseReference updateIsReadDenomination = FirebaseDatabase.instance
+                                            .ref()
+                                            .child('owners_collection')
+                                            .child(userName)
+                                            .child('kiosks')
+                                            .child(widget.boxName)
+                                            .child('denominations');
+                                        await updateIsReadDenomination.update({'isReadLow':true});
+                                       // await sendThouNotif.update({"isRead": true});
                                       });
-                                      print('Notification set successfully.');
-                                    });
+                                    }
                                   }
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.center,
