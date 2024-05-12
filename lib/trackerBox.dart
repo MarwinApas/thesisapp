@@ -32,9 +32,11 @@ class _TrackerBoxState extends State<TrackerBox> {
   double krwRate = 0.0;
   double feeRate = 0.0;
   List<Transaction> transactions = [];
+  List<Transaction> allTransactions = [];
   double totalSalesToday = 0.0;
   double totalSalesThisWeek = 0.0;
   double totalSalesThisMonth = 0.0;
+  double totalSalesRange = 0.0;
   String transactionCheck = '';
 
 
@@ -46,6 +48,8 @@ class _TrackerBoxState extends State<TrackerBox> {
   @override
   void initState() {
     super.initState();
+    dateFrom = DateTime.now();
+    dateTo = DateTime.now();
     fetchCurrencyRates();
     GetUserName().then((username) {
       setState(() {
@@ -53,7 +57,6 @@ class _TrackerBoxState extends State<TrackerBox> {
         updateTransactionHistory();
       });
     });
-    getAlertKioskFlag();
     //checkRemainingStocksPerDenomination();
     //fetchData();
     //readSecretKey();
@@ -67,9 +70,8 @@ class _TrackerBoxState extends State<TrackerBox> {
 
   void updateTransactionHistory() async {
     await FetchTransactionHistory();
+    await FetchAllTransactionHistory();
   }
-
-
 
   //daily transaction history
   Future<void> FetchTransactionHistory() async {
@@ -85,19 +87,33 @@ class _TrackerBoxState extends State<TrackerBox> {
         .child(widget.boxName)
         .child('transaction_history');
     try {
+      transactions.clear();
       DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
       if (snapshot.value != null && snapshot.value is Map) {
         Map<dynamic, dynamic> kioskMap = LinkedHashMap.from(snapshot.value as Map<dynamic, dynamic>);
         kioskMap.entries.forEach((entry) {
           String key = entry.key;
-          int value = entry.value['amount'];
+          double amount_in_peso = double.tryParse(entry.value['amount_in_peso']) ?? 0.0;
           String name = entry.value['name'];
+          String amount_exchanged = entry.value['amount_exchanged'];
           String dateTime = entry.value['dateTime'];
-          String formattedDateTo = '${dateTo.year}-${dateTo.month.toString().padLeft(2, '0')}-${dateTo.day.toString().padLeft(2, '0')} ${dateTo.hour.toString().padLeft(2, '0')}:${dateTo.minute.toString().padLeft(2, '0')}';
-          String formattedDateFrom = '${dateFrom.year}-${dateFrom.month.toString().padLeft(2, '0')}-${dateFrom.day.toString().padLeft(2, '0')} ${dateFrom.hour.toString().padLeft(2, '0')}:${dateFrom.minute.toString().padLeft(2, '0')}';
-          transactions.add(Transaction(
+
+          DateTime entryDateTime = DateTime.parse(dateTime);
+
+          if ((entryDateTime.isAfter(dateFrom) && entryDateTime.isBefore(dateTo)) || entryDateTime.isBefore(dateTo.add(Duration(days: 1)))) {
+            transactions.add(Transaction(
+              key: key,
+              amount_in_peso: amount_in_peso,
+              amount_exchanged: amount_exchanged,
+              name: name,
+              dateTime: dateTime,
+            ));
+          }
+
+          allTransactions.add(Transaction(
             key: key,
-            value: value,
+            amount_in_peso: amount_in_peso,
+            amount_exchanged: amount_exchanged,
             name: name,
             dateTime: dateTime,
           ));
@@ -114,31 +130,91 @@ class _TrackerBoxState extends State<TrackerBox> {
         DateTime parsedDateTimeB = format.parse(dateTimeB);
         return parsedDateTimeA.compareTo(parsedDateTimeB);
       });
-
-      DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
-      String currentDate = DateFormat('yyyy-MM-dd').format(now);
-
-
+      
+      totalSalesRange = 0;
       for (Transaction transaction in transactions) {
+
         String dateTimeString = transaction.dateTime;
         DateFormat format = DateFormat("yyyy-MM-dd HH:mm");
         DateTime transactionDateTime = format.parse(dateTimeString);
-        String transactionDate = transaction.dateTime.split(' ')[0];
-        String transactionYearMonth = transactionDate.split('-').take(2).join('-');
 
-
-        if (transactionDateTime.isAfter(sevenDaysAgo) && transactionDateTime.isBefore(now)) {
-          totalSalesThisWeek += transaction.value;
-        }
-
-        if (transactionYearMonth == currentYearMonth) {
-          totalSalesThisMonth += transaction.value;
-        }
-
-        if (transactionDate == currentDate) {
-          totalSalesToday += transaction.value;
+        if ((transactionDateTime.isAfter(dateFrom) && transactionDateTime.isBefore(dateTo)) || transactionDateTime.isBefore(dateTo.add(Duration(days: 1)))) {
+          totalSalesRange += transaction.amount_in_peso;
         }
       }
+
+    } catch (e) {
+      transactionCheck = '$e';
+      print('Error fetching kiosk transaction history: $e');
+    }
+  }
+
+  Future<void> FetchAllTransactionHistory() async {
+    DateTime now = DateTime.now();
+    String yearNumber = DateFormat('yyyy').format(now);
+    String monthNumber= DateFormat('MM').format(now);
+    String currentYearMonth = DateFormat('yyyy-MM').format(now);
+    String day = DateFormat('d').format(now);
+    List<String> historyToday = [];
+    DatabaseReference historyRef = FirebaseDatabase.instance.ref().child('owners_collection')
+        .child(userName.toString())
+        .child('kiosks')
+        .child(widget.boxName)
+        .child('transaction_history');
+    try {
+      allTransactions.clear();
+      DataSnapshot snapshot = await historyRef.get() as DataSnapshot;
+      if (snapshot.value != null && snapshot.value is Map) {
+        Map<dynamic, dynamic> kioskMap = LinkedHashMap.from(snapshot.value as Map<dynamic, dynamic>);
+        kioskMap.entries.forEach((entry) {
+          String key = entry.key;
+          double amount_in_peso = double.tryParse(entry.value['amount_in_peso']) ?? 0.0;
+          String name = entry.value['name'];
+          String amount_exchanged = entry.value['amount_exchanged'];
+          String dateTime = entry.value['dateTime'];
+
+          allTransactions.add(Transaction(
+            key: key,
+            amount_in_peso: amount_in_peso,
+            amount_exchanged: amount_exchanged,
+            name: name,
+            dateTime: dateTime,
+          ));
+        });
+      }
+
+      totalSalesToday = 0;
+      totalSalesThisWeek = 0;
+      totalSalesThisMonth = 0;
+
+      DateTime now = DateTime.now();
+      String currentYearMonth = DateFormat('yyyy-MM').format(now);
+        DateTime sevenDaysAgo = now.subtract(Duration(days: 7));
+        String currentDate = DateFormat('yyyy-MM-dd').format(now);
+
+
+        for (Transaction transaction in allTransactions) {
+          String dateTimeString = transaction.dateTime;
+          DateFormat format = DateFormat("yyyy-MM-dd HH:mm");
+          DateTime transactionDateTime = format.parse(dateTimeString);
+          String transactionDate = transaction.dateTime.split(' ')[0];
+          String transactionYearMonth = transactionDate.split('-').take(2).join(
+              '-');
+
+
+          if (transactionDateTime.isAfter(sevenDaysAgo) &&
+              transactionDateTime.isBefore(now)) {
+            totalSalesThisWeek += transaction.amount_in_peso;
+          }
+
+          if (transactionYearMonth == currentYearMonth) {
+            totalSalesThisMonth += transaction.amount_in_peso;
+          }
+
+          if (transactionDate == currentDate) {
+            totalSalesToday += transaction.amount_in_peso;
+          }
+        }
 
     } catch (e) {
       transactionCheck = '$e';
@@ -282,11 +358,13 @@ class _TrackerBoxState extends State<TrackerBox> {
     String formattedDate = formatter.format(dateTime);
     return formattedDate;
   }
+
   Future<void> getAlertKioskFlag() async {
     String dateAndTime = await getTimeStamp();
     DatabaseReference alertButtonState = FirebaseDatabase.instance.ref()
     .child('owners_collection')
     .child(userName)
+    //.child('notifications');
     .child('kiosks')
     .child(widget.boxName)
     .child('alertButton')
@@ -294,15 +372,14 @@ class _TrackerBoxState extends State<TrackerBox> {
     alertButtonState.onValue.listen((event) {
       dynamic alertButton = event.snapshot.value ?? false; // Default to false if value is null
       if (alertButton) {
-        // Send the alert notification to 'notifications'
         DatabaseReference sendAlertNotification = FirebaseDatabase.instance.ref()
             .child('owners_collection')
             .child(userName)
             .child('notifications')
             .child(dateAndTime);
         sendAlertNotification.set({
-          'message': 'the alert button in ${widget.boxName} \nhas been pressed! Click to confirm.',
-          'isRead': false
+          //'message': 'the alert button in ${widget.boxName} \nhas been pressed! Click to confirm.',
+          //'isRead': true
         }).then((_){
           setStringKioskName(widget.boxName);
         });
@@ -532,6 +609,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                 dataRowHeight: 50,
                                                 columns: [
                                                   DataColumn(label: Text('DateTime')),
+                                                  DataColumn(label: Text('Amount Exchanged')),
                                                   DataColumn(label: Text('Amount (pesos)')),
                                                   DataColumn(label: Text('Name')),
                                                   DataColumn(label: Text('Transaction \nNumber')),
@@ -544,7 +622,8 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                     cells: [
 
                                                       DataCell(Text('${transactions[index].dateTime}')),
-                                                      DataCell(Text('${transactions[index].value}')),
+                                                      DataCell(Text('${transactions[index].amount_exchanged}')),
+                                                      DataCell(Text('${transactions[index].amount_in_peso}')),
                                                       DataCell(Text('${transactions[index].name}')),
                                                       DataCell(Text('${transactions[index].key}')),
                                                     ],
@@ -612,10 +691,10 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                         if (selectedDate != null) {
                                                           setState(() {
                                                             dateFrom = selectedDate;
-                                                            updateTransactionHistory();
-                                                            (context as Element).markNeedsBuild();
                                                           });
                                                         }
+                                                        await FetchTransactionHistory();
+                                                        (context as Element).markNeedsBuild();
                                                       },
                                                     ),
                                                   ],
@@ -678,10 +757,11 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                         if (selectedDate != null) {
                                                           setState(() {
                                                             dateTo = selectedDate;
-                                                            updateTransactionHistory();
-                                                            (context as Element).markNeedsBuild();
                                                           });
                                                         }
+
+                                                        await FetchTransactionHistory();
+                                                        (context as Element).markNeedsBuild();
                                                       },
                                                     ),
                                                   ],
@@ -692,6 +772,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                             Text("Total sales today: $totalSalesToday pesos"),
                                             Text("Total sales this week: $totalSalesThisWeek pesos"),
                                             Text("Total sales this month: $totalSalesThisMonth pesos"),
+                                            Text("Total sales within range: $totalSalesRange pesos"),
                                           ],
                                         ),
                                       ),
@@ -970,13 +1051,15 @@ class _TrackerBoxState extends State<TrackerBox> {
 
 class Transaction {
   final String key;
-  final int value;
+  final String amount_exchanged;
+  final double amount_in_peso;
   final String name;
   final String dateTime;
 
   Transaction({
     required this.key,
-    required this.value,
+    required this.amount_in_peso,
+    required this.amount_exchanged,
     required this.name,
     required this.dateTime,
   });

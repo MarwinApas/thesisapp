@@ -279,7 +279,7 @@ class _AlertsState extends State<Alerts> {
                                 .child('kiosks')
                                 .child(prefsKioskName)
                                 .child('alertButton');
-                            notificationToUpdate.update({'isRead': true}).then((_){
+                            notificationToUpdate.update({'isPressed': false, 'isRead':true}).then((_){
                               showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
