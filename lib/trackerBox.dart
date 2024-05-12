@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,9 +9,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:collection';
-//import 'package:cloud_firestore/cloud_firestore.dart';
-//import 'dart:convert';
-//import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
 
 class TrackerBox extends StatefulWidget {
   final String boxName;
@@ -27,6 +26,7 @@ class _TrackerBoxState extends State<TrackerBox> {
   //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _expanded = false;
   late String userName; // Define userKey variable
+  double phpRate = 0.0;
   double usdRate = 0.0;
   double audRate = 0.0;
   double krwRate = 0.0;
@@ -38,7 +38,7 @@ class _TrackerBoxState extends State<TrackerBox> {
   double totalSalesThisMonth = 0.0;
   double totalSalesRange = 0.0;
   String transactionCheck = '';
-
+  Map<String, dynamic> forexData = {};
 
   DateTime dateFrom = DateTime.now();
   DateTime dateTo = DateTime.now();
@@ -50,7 +50,14 @@ class _TrackerBoxState extends State<TrackerBox> {
     super.initState();
     dateFrom = DateTime.now();
     dateTo = DateTime.now();
-    fetchCurrencyRates();
+    /*fetchCurrencyRates();
+    fetchForexData();
+    fetchPHPForexData();
+    fetchUSDForexData();
+    fetchKRWForexData();
+    fetchAUDForexData();
+    setDailyPrice();*/
+    fetchUSDAUDKRWForexData();
     GetUserName().then((username) {
       setState(() {
         userName = username ?? '';
@@ -63,6 +70,147 @@ class _TrackerBoxState extends State<TrackerBox> {
     //check1000Denomination();
   }
 
+  Future<void> fetchUSDAUDKRWForexData() async{
+    try{
+      var response = await http.get(Uri.parse('https://open.er-api.com/v6/latest'));
+      if(response.statusCode == 200){
+        Map<String, dynamic> responseData = jsonDecode(response.body)['rates'];
+        double usdValue = responseData['USD'].toDouble();
+        double krwValue = responseData['KRW'].toDouble();
+        double phpValue = responseData['PHP'].toDouble();
+        double audValue = responseData['AUD'].toDouble();
+        setState(() {
+          phpRate = phpValue;
+          usdRate = phpRate*usdValue;
+          krwRate = phpRate/krwValue;
+          audRate = phpRate/audValue;
+        });
+        DatabaseReference updateDailyRates = FirebaseDatabase.instance.ref('currency_rate');
+        updateDailyRates.update({
+          'AUD_rate':audRate.toStringAsFixed(2),
+          'USD_rate':usdRate.toStringAsFixed(2),
+          'KRW_rate':krwRate.toStringAsFixed(3),
+        });
+        //print('USD Forex Rate: $usdRate');
+        //print('KRW Forex Rate: $krwRate');
+        //print('AUD Forex Rate: $audRate');
+      }
+      else{
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    }catch(e){
+      print('Error fetching data: $e');
+    }
+  }
+
+  /*Future<void> fetchForexData() async {
+    try {
+      var response = await http.get(Uri.parse('https://open.er-api.com/v6/latest'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body)['rates'];
+
+        // Convert integer values to doubles
+        Map<String, double> convertedData = {};
+        responseData.forEach((key, value) {
+          convertedData[key] = value.toDouble();
+        });
+
+        setState(() {
+          forexData = convertedData;
+        });
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+  Future<void> fetchPHPForexData() async {
+    try {
+      var response = await http.get(Uri.parse('https://open.er-api.com/v6/latest'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body)['rates'];
+
+        // Get the value of USD
+        double phpValue = responseData['PHP'].toDouble();
+        print('PHP Forex Rate: $phpValue');
+        setState(() {
+          phpRate = phpValue;
+        });
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  Future<void> fetchUSDForexData() async {
+    try {
+      var response = await http.get(Uri.parse('https://open.er-api.com/v6/latest'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body)['rates'];
+
+        // Get the value of USD
+        double usdValue = responseData['USD'].toDouble();
+        print('USD Forex Rate: $usdValue');
+        setState(() {
+          usdRate = usdValue * phpRate;
+        });
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+  Future<void> fetchKRWForexData() async {
+    try {
+      var response = await http.get(Uri.parse('https://open.er-api.com/v6/latest'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body)['rates'];
+
+        // Get the value of KRW
+        double krwValue = responseData['KRW'].toDouble();
+        print('KRW Forex Rate: $krwValue');
+        setState(() {
+          krwRate = krwValue /phpRate;
+        });
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+  Future<void> fetchAUDForexData() async {
+    try {
+      var response = await http.get(Uri.parse('https://open.er-api.com/v6/latest'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body)['rates'];
+
+        // Get the value of AUD
+        double audValue = responseData['AUD'].toDouble();
+        print('AUD Forex Rate: $audValue');
+        setState(() {
+          audRate = audValue * phpRate;
+        });
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+  Future<void> setDailyPrice() async{
+    DatabaseReference setDailyForexPrice = FirebaseDatabase.instance.ref('currency_rate');
+    setDailyForexPrice.update({
+      'USD_rate':usdRate.toString(),
+      'AUD_rate':audRate.toString(),
+      'KRW_rate':krwRate.toString(),
+    });
+  }*/
+
   Future<void> setStringKioskName (String kioskName) async{
     SharedPreferences prefsKioskName = await SharedPreferences.getInstance();
     prefsKioskName.setString('kioskName', widget.boxName);
@@ -71,6 +219,7 @@ class _TrackerBoxState extends State<TrackerBox> {
   void updateTransactionHistory() async {
     await FetchTransactionHistory();
     await FetchAllTransactionHistory();
+
   }
 
   //daily transaction history
@@ -227,6 +376,7 @@ class _TrackerBoxState extends State<TrackerBox> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userName');
   }
+
   Future<void> _deleteAndShowSnackBar(String kioskName) async {
     // Delete the widget
     widget.onDelete();
@@ -237,6 +387,7 @@ class _TrackerBoxState extends State<TrackerBox> {
         .child(kioskName);
     await kiosksRef.remove();
   }
+
 //READ USD CURRENCY RATE METHOD
   Future<double> fetchUSDRate() async {
     DatabaseReference usdRateRef = FirebaseDatabase.instance
@@ -345,11 +496,13 @@ class _TrackerBoxState extends State<TrackerBox> {
 
     return completer.future;
   }
+
   Future<void> fetchCurrencyRates() async {
     await fetchUSDRate();
     await AUDRateToday();
     await KRWRateToday();
     await FEERateToday();
+
   }
   Future<String> getTimeStamp() async {
     var dateTime = DateTime.now(); // Replace 'DateTime.now()' with your DateTime value
@@ -400,8 +553,6 @@ class _TrackerBoxState extends State<TrackerBox> {
       "isRead": true
     });
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -827,6 +978,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                             Text("Total sales this week: $totalSalesThisWeek pesos"),
                                             Text("Total sales this month: $totalSalesThisMonth pesos"),
                                             Text("Total sales within range: $totalSalesRange pesos"),
+
                                           ],
                                         ),
                                       ),
@@ -850,7 +1002,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    String selectedCurrency = 'USD_rate'; // Default selected currency
+                                    String selectedCurrency = 'FEE_rate'; // Default selected currency
                                     TextEditingController priceController = TextEditingController(); // Controller for the price input field
 
                                     return AlertDialog(
@@ -947,9 +1099,9 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                           return Text("No data available");
                                                         } else {
                                                           // Use snapshot.data to access the fetched rate
-                                                          double krwRate = snapshot.data!;
+                                                          double feeRate = snapshot.data!;
                                                           return Text(
-                                                            "FEE: ${krwRate.toStringAsFixed(3)} PESOS",
+                                                            "FEE RATE: ${(feeRate*100).toStringAsFixed(2)} %",
                                                             style: TextStyle(
                                                               fontSize: 14,
                                                               fontWeight: FontWeight.bold,
@@ -964,9 +1116,9 @@ class _TrackerBoxState extends State<TrackerBox> {
                                               }
                                             },
                                           ),
-                                          DropdownButtonFormField<String>(
+                                          /*DropdownButtonFormField<String>(
                                             value: selectedCurrency,
-                                            items: ['USD_rate', 'AUD_rate', 'KRW_rate','FEE_rate'].map((String currency) {
+                                            items: ['FEE_rate'].map((String currency) {
                                               return DropdownMenuItem<String>(
                                                 value: currency,
                                                 child: Text(currency),
@@ -979,13 +1131,13 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                 });
                                               }
                                             },
-                                          ),
-                                          SizedBox(height: 10), // Add space between dropdown and text field
+                                          ),*/
+                                          SizedBox(height: 10),
                                           TextField(
                                             controller: priceController,
                                             keyboardType: TextInputType.number, // Set keyboard type to number
                                             decoration: InputDecoration(
-                                              labelText: "Enter Price",
+                                              labelText: "input fee rate in decimals",
                                               border: OutlineInputBorder(),
                                             ),
                                           ),
@@ -1000,14 +1152,23 @@ class _TrackerBoxState extends State<TrackerBox> {
                                         ),
                                         ElevatedButton(
                                           onPressed: () async {
-                                            // Get the selected currency and price here
-                                            String currency = selectedCurrency;
                                             String price = priceController.text ?? '0.0';
+                                            double feeRate = double.parse(price);
+                                            DatabaseReference feePriceRef = FirebaseDatabase.instance.ref('currency_rate');
+                                            feePriceRef.update({'FEE_rate': feeRate.toString()}).then((_) {
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                content: Text('FEE RATE updated successfully!'),
+                                              ));
+                                            }).catchError((error) {
+                                              print('Error updating prices: $error');
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                content: Text('Failed to update FEE RATE. Please try again.'),
+                                              ));
+                                            });
 
-                                            //if fee rate is selected
-                                            if(selectedCurrency =='FEE_rate'){
-                                              double feeRate = double.parse(price);
-                                              double usdRate = await fetchUSDRate();
+
+                                              /*double usdRate = await fetchUSDRate();
                                               double audRate = await AUDRateToday();
                                               double krwRate = await KRWRateToday();
 
@@ -1046,35 +1207,18 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                 });
                                               }).catchError((error) {
                                                // handleSetPriceError(context, error);
-                                              });
-                                            }
-
-                                            DatabaseReference currencyPriceRef = FirebaseDatabase.instance
-                                                .ref()
-                                                .child('currency_rate')
-                                                .child(currency);
-
-                                            currencyPriceRef.set(price).then((_) {
-                                              Navigator.pop(context);
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                content: Text('Price for $currency set successfully!'),
-                                              ));
-                                            }).catchError((error) {
-                                              Navigator.pop(context);
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                content: Text('Error setting price: $error'),
-                                              ));
-                                            });
-                                          },
-                                          child: Text("Set Price"),
+                                              });*/
+                                            },
+                                          child: Text("SET FEE RATE"),
                                         ),
                                       ],
                                     );
                                   },
                                 );
                               },
-                              child: Text("Set Price"),
+                              child: Text("SET FEE RATE"),
                             ),
+
                           ],
                         ),
                       ),
