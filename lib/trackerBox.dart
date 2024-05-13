@@ -1154,21 +1154,8 @@ class _TrackerBoxState extends State<TrackerBox> {
                                           onPressed: () async {
                                             String price = priceController.text ?? '0.0';
                                             double feeRate = double.parse(price);
-                                            DatabaseReference feePriceRef = FirebaseDatabase.instance.ref('currency_rate');
-                                            feePriceRef.update({'FEE_rate': feeRate.toString()}).then((_) {
-                                              Navigator.pop(context);
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                content: Text('FEE RATE updated successfully!'),
-                                              ));
-                                            }).catchError((error) {
-                                              print('Error updating prices: $error');
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                content: Text('Failed to update FEE RATE. Please try again.'),
-                                              ));
-                                            });
 
-
-                                              /*double usdRate = await fetchUSDRate();
+                                              double usdRate = await fetchUSDRate();
                                               double audRate = await AUDRateToday();
                                               double krwRate = await KRWRateToday();
 
@@ -1189,6 +1176,8 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                   .child('currency_rate')
                                                   .child('KRW_rate');
 
+                                              DatabaseReference feePriceRef = FirebaseDatabase.instance.ref('currency_rate');
+                                              feePriceRef.update({'FEE_rate': feeRate.toString()});
                                               // Update AUD rate
                                               audPriceRef.set(updatedAudPrice.toStringAsFixed(2)).then((_) {
                                                 // Update USD rate
@@ -1207,7 +1196,7 @@ class _TrackerBoxState extends State<TrackerBox> {
                                                 });
                                               }).catchError((error) {
                                                // handleSetPriceError(context, error);
-                                              });*/
+                                              });
                                             },
                                           child: Text("SET FEE RATE"),
                                         ),
