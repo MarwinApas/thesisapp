@@ -547,6 +547,7 @@ class _TrackerState extends State<Tracker> {
           '20': denominationsData['20'],
           '5': denominationsData['5'],
           '1': denominationsData['1'],
+          'isReadLow': false
         });
       } else {
         print('Denominations data not found.');

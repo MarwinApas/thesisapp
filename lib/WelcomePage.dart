@@ -4,7 +4,6 @@ import 'package:thesis_app/LoginPage.dart';
 import 'package:thesis_app/flutter/Alerts.dart';
 import 'package:thesis_app/flutter/Settings.dart';
 import 'package:thesis_app/flutter/Tracker.dart';
-import 'package:thesis_app/flutter/ForexDataPage.dart';
 class WelcomePage extends StatelessWidget {
   final String? userName;
   const WelcomePage({Key? key, this.userName}) : super(key: key);
